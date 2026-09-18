@@ -1,7 +1,7 @@
 # Pirate Battle — Architecture Specification (handoff)
 
 This is the consolidated, self-sufficient output of the architecture sessions. It supersedes any
-conflicting detail in the session HTML files (which are kept in `sessions/` as diagrams and
+conflicting detail in the design-session documents (kept outside this repository as diagrams and
 rationale). The challenge brief is `PIRATE_BATTLE_DESIGN_BRIEF.md`; requirement IDs below refer to it.
 
 Scoring: GAME 35 · ARCH 20 · UI 15 · DATA 10 · TEST 10 · MSW 5 · PERF/DOC 5. Budget: **two days, fixed**.
@@ -13,7 +13,8 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 
 | Topic | Decision |
 | --- | --- |
-| Stack | Vite · React 19 · TypeScript strict · PixiJS v8 · TanStack Query v5 · Axios · MSW v2 · Playwright · Vitest (4 tests only) · CSS Modules · ESLint with `eslint-plugin-boundaries` |
+| Stack | Vite · React 19 · TypeScript strict · PixiJS v8 · TanStack Query v5 · Axios · MSW v2 · Playwright · Vitest (4 tests only) · CSS Modules · ESLint with `eslint-plugin-boundaries` · React Router (real URLs). TypeScript pinned to 6.0 because typescript-eslint does not support 7.x |
+| Deploy | Self-hosted Docker image (Node build stage → nginx serving `dist` on plain HTTP `:8080`) behind the author's existing reverse proxy, which terminates TLS with a trusted certificate on a dedicated subdomain root. HTTPS is mandatory: MSW's service worker only registers in a secure context. Subdomain root means no Vite `base`, router `basename` or worker-scope changes |
 | Arena | One hand-authored Tiled map, 24×14 tiles of 64 px (1536×896 logical), fully visible, letterboxed. No camera, no procedural generation |
 | Spawn points | Authored in map data; runtime filter = distance to player ≥ `minPlayerDist` and no ship within 80 px |
 | Options screen | Exactly two settings: session seconds (60–180, step 10, default 120), spawn interval (1–10 s, step 1, default 3). Steppers + explicit Save |
@@ -90,8 +91,13 @@ public/       mockServiceWorker.js, assets/ (converted atlases, tiles, ui), maps
 scripts/      convert-atlases.ts (Sparrow XML → Pixi JSON; tile grid → JSON), perf.spec.ts, memory.spec.ts
 e2e/          fixtures/pbPage.ts, specs/test-01..12.spec.ts, __screenshots__/
 docs/         ARCHITECTURE.md, README sections, licenses.md, perf/REPORT.md, reports/
-vercel.json   SPA rewrite excluding paths with a file extension
+Dockerfile    multi-stage: node:24-alpine build (VITE_COMMIT_SHA build arg) → nginx:alpine serving dist on :8080, healthcheck
+nginx.conf    SPA fallback for extensionless paths only; cache rules per path (see §16)
+docker-compose.yml  one service, restart unless-stopped; .dockerignore keeps the build context small
 ```
+
+Vite `build.assetsDir` is `static`, so hashed bundles (`/static/*`, cached immutable) never share a folder with the
+unhashed files copied from `public/assets/` (`/assets/*`, revalidated).
 
 ## 3. React ↔ PixiJS bridge (ARCH-01/04/08/09)
 
@@ -370,7 +376,12 @@ timeoutAfterSave (PUT commits to fakeDb, then hangs 12 s) · downThenRecover (PU
 Selection: `?scenario=id` (persisted), `?reset=1`, dev panel, `__PB_TEST__.setScenario`. Reset restores fixtures and zeroes
 the per-scenario request counter. Fixtures: 24 seeded captains, scores 8–41, across 2 configKeys; local player never in fixtures.
 Production: `worker.start({ onUnhandledRequest: 'bypass' })` awaited before first render, wrapped in try/catch → "offline mode" banner
-on failure; `public/mockServiceWorker.js`; `vercel.json` rewrite `"/((?!.*\\.).*)" → /index.html` (or equivalent negative lookahead).
+on failure; `public/mockServiceWorker.js`. Hosting (nginx): extensionless paths `try_files $uri /index.html`; any path with a
+file extension is `try_files $uri =404`, so a missing asset is a real 404 and never an HTML page; `/static/*` gets
+`Cache-Control: public, max-age=31536000, immutable`; everything else, including `index.html` and `mockServiceWorker.js`, gets
+`Cache-Control: no-cache` so a redeploy is never hidden behind a stale worker. The reverse proxy in front must pass these headers
+through unchanged and add no SPA handling of its own. The page must be served over HTTPS with a trusted certificate
+(service workers require a secure context); plain-HTTP LAN access is not a valid deploy.
 
 ## 17. Testing (TEST-01..18)
 
@@ -390,7 +401,8 @@ animation and the render RNG. Visual baselines: menu, arena after `advance(5000)
 `maxDiffPixelRatio 0.005`; generated in the Playwright Docker image. `page.clock` for wall-clock waits (outbox backoff) in data specs only.
 Reporter html + list, `trace: 'retain-on-failure'`. Vitest (4 tests): comparator, validateOptions, outbox reducer, segment-circle.
 
-Per-spec map (hooks · scenario · seed): see `sessions/Session 6 - Quality.dc.html` D9 table.
+Per-spec map (hooks · scenario · seed): the D9 table of design session 6 (Quality), kept outside this repository; it is
+inlined here in M6.
 
 ## 18. Performance (PERF-01..04)
 
@@ -412,11 +424,11 @@ Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A
 
 | # | Hours | Scope | Done when |
 | --- | --- | --- | --- |
-| M0 | 1.5 | Vite/React/TS strict, layer folders + lint boundaries, Playwright/Vitest installed, vercel.json, MSW worker file, Vercel connected | Hello build live; `/result` reload works; worker served as file |
+| M0 | 1.5 | Vite/React/TS strict, layer folders + lint boundaries, Playwright/Vitest installed, MSW worker file, Dockerfile + nginx.conf + compose | Local Docker image verified on `localhost:8080`: extensionless paths fall back to the app, `/result` reload works, `mockServiceWorker.js` returns 200 as JavaScript with `no-cache`, a missing asset is a 404, `/static/*` is immutable, `body[data-msw-ready]` set, console clean. Public deploy is deferred to CP1 |
 | M1 | 4 | Atlas conversion, tile probe, Tiled map + loader, ensureLoaded with progress/error, GameSession skeleton (Strict-Mode-safe), static tiles, one ship, letterbox/DPR | Arena renders on desktop + phone; mount/unmount/mount leaves one canvas, zero listeners |
 | M2 | 4.5 | GameConfig, world/step, movement + islands + bounds, cannons array with cooldowns, swept shots, damage/scoring, authored spawns, Chaser/Shooter AI, keyboard, over-ship bars, damage stages, explosion + wreck | Full keyboard match playable; seeded run repeats under ManualClock |
 | M3 | 2 | Loop, Clock, lifecycle, pause/auto-pause/resume, store + HUD, Pause dialog, minimal Result, abandon on route change | HUD updates on change only; blur pauses; held keys don't leak; Play Again resets |
-| CP1 | h14 | Day-1 buffer (2 h) → M2 overrun first, else stretch #1–2 | M0–M3 deployed |
+| CP1 | h14 | Day-1 buffer (2 h) → M2 overrun first, else stretch #1–2. Public deploy: homelab clone, `docker compose up -d --build`, Caddy site `reverse_proxy` to the container on the subdomain | M0–M3 deployed over HTTPS on the subdomain: `mockServiceWorker.js` 200 as JavaScript with `no-cache`; `/result` loads directly and on reload; `document.body.dataset.mswReady === "true"`; footer SHA = `git rev-parse --short HEAD` |
 | M4 | 3.5 | Wood/gold primitives, Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), Result status row, touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus | All screens usable by keyboard and touch; no clipping at 640×360 |
 | M5 | 3 | Contracts, Axios, queries, outbox, storage codec, handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
 | CP2 | h20.5 | If behind: M6 keeps 3.5 h, M7 shrinks to 1.5 h | Manual pass of every TEST-ID on the deployed build |
@@ -440,7 +452,8 @@ console clean at each checkpoint; evidence produced from the deployed URL.
 Appendix: requirement ID → section index.
 
 README.md (DEL-03): live URL + estimate + cuts; setup and scripts (dev, build, preview, lint, typecheck, test, test:e2e, perf);
-env vars (none); controls; gameplay config + dev panel + custom rule; scenarios and how to reproduce each; tests and baseline update
+deploy (`VITE_COMMIT_SHA=$(git rev-parse --short HEAD) docker compose up -d --build`, reverse-proxy requirements from §16);
+env vars (`VITE_COMMIT_SHA` build arg only); controls; gameplay config + dev panel + custom rule; scenarios and how to reproduce each; tests and baseline update
 (Docker command); performance; assets and licenses.
 
 ## 22. Risk register (top items)
@@ -448,7 +461,8 @@ env vars (none); controls; gameplay config + dev panel + custom rule; scenarios 
 | Risk | Mitigation | Fallback |
 | --- | --- | --- |
 | Async `app.init` under Strict Mode | `disposed` guard after every await; idempotent dispose; checked at M1 exit | module-level Application per host element |
-| MSW in production (worker path / rewrite) | deploy in M0; rewrite excludes file extensions; start() in try/catch | offline-mode banner, tabs in error state, game unaffected |
+| MSW in production (worker path / rewrite / secure context) | deploy in M0; nginx fallback only for extensionless paths; HTTPS with a trusted certificate; worker `no-cache`; start() in try/catch | offline-mode banner, tabs in error state, game unaffected |
+| Homelab unreachable during evaluation (DEL-02) | `restart: unless-stopped` + healthcheck; commit SHA in the menu footer; README states the self-hosted choice and the `docker compose` command | static mirror of the same `dist/` on Cloudflare Pages (≈ 10 min, M7) |
 | Enemies stuck on islands | convex islands, ≥ 3-tile lanes, stuck rule, separation | flow field BFS (1.5 h) |
 | Flaky visual baselines | Docker image, self-hosted font, fonts.ready, ambient off, seed 42 | mask arena; maxDiffPixelRatio 0.02 |
 | Tile index assumption | 15-min probe first | fix conversion formula |

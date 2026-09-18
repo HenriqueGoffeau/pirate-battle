@@ -1,0 +1,14 @@
+.git
+node_modules
+dist
+assets
+sessions
+docs
+e2e
+test-results
+playwright-report
+blob-report
+*.md
+Dockerfile
+docker-compose.yml
+.dockerignore

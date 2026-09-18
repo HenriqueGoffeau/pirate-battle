@@ -91,7 +91,7 @@ Build **Pirate Battle**: a single-player, top-down 2D naval shooter that runs en
 - **PixiJS** renders the game world.
 - **Ranking** and **Match History** are REST APIs that are **mocked with MSW** (there is no server), called with **Axios** and managed by **TanStack Query**.
 - **Playwright** covers end-to-end tests and visual regression.
-- A **public deploy** is mandatory (Vercel recommended).
+- A **public deploy** is mandatory (Vercel recommended). Chosen route: self-hosted Docker image behind the author's reverse proxy on a subdomain, over HTTPS (see DEL-02).
 
 The challenge grades gameplay, PixiJS skill, architecture, data integration, user experience, and delivery quality. The candidate must give a **time estimate before starting**.
 
@@ -315,7 +315,7 @@ Test infrastructure rules:
 | ID | Requirement |
 | --- | --- |
 | DEL-01 | Repo with source code, lockfile, assets, mocks, fixtures, tests. |
-| DEL-02 | **Public deploy is mandatory** (Vercel recommended; Netlify and Cloudflare Pages accepted). It must match the delivered code, stay up during evaluation, run the ranking and history mocks, and work **when opened or reloaded on any URL**. |
+| DEL-02 | **Public deploy is mandatory** (Vercel recommended; Netlify and Cloudflare Pages accepted). It must match the delivered code, stay up during evaluation, run the ranking and history mocks, and work **when opened or reloaded on any URL**. **Decision:** self-hosted — a Docker image (nginx) behind the author's existing reverse proxy on a dedicated subdomain, HTTPS with a trusted certificate. The README states this choice explicitly, since the challenge names only Vercel, Netlify and Cloudflare Pages; a static mirror on Cloudflare Pages remains the fallback. |
 | DEL-03 | `README.md` covers setup, env vars, controls, gameplay config, how to select and reset network scenarios, commands, and how to reproduce failures. Scripts for **dev, build, preview, lint, typecheck, Playwright**. |
 | DEL-04 | `ARCHITECTURE.md` covers the React/PixiJS integration, simulation loop, collisions, resource management, local persistence, and the ranking/history integration (contracts, cache, pending-record recovery), plus limitations and balancing decisions. |
 | DEL-05 | Test reports and profiling reports are included. |
@@ -721,6 +721,7 @@ Alternative: `POST /api/matches` with an `Idempotency-Key` header.
 - **`outOfOrder`:** the delay depends on a request counter, so an earlier request answers later.
 - **Production:** the service worker must start **before** the first render and before any query; `mockServiceWorker.js` is served from the site root; unhandled requests (assets) pass through (`onUnhandledRequest: 'bypass'`).
 - **SPA rewrites** on the host must not swallow `mockServiceWorker.js` or asset URLs (DEL-02).
+- **Secure context:** service workers register only over HTTPS (or `localhost`), so the self-hosted deploy must terminate TLS with a trusted certificate; a plain-HTTP LAN address disables every mock.
 
 ### 7.19 Test hooks and determinism
 

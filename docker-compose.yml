@@ -1,0 +1,11 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        VITE_COMMIT_SHA: ${VITE_COMMIT_SHA:-unknown}
+    image: pirate-battle:${VITE_COMMIT_SHA:-latest}
+    container_name: pirate-battle
+    ports:
+      - "${PB_PORT:-8080}:8080"
+    restart: unless-stopped
