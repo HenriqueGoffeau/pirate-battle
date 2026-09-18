@@ -13,7 +13,9 @@
     "lint": "eslint .",
     "typecheck": "tsc -b",
     "test": "vitest run --passWithNoTests",
-    "test:e2e": "playwright test --pass-with-no-tests"
+    "test:e2e": "playwright test --pass-with-no-tests",
+    "convert-assets": "node scripts/convert-assets.ts && node scripts/build-map.ts",
+    "map:watch": "node scripts/build-map.ts --watch"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.103.1",

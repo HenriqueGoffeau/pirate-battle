@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 import { router } from './router'
 import { startMsw } from './startMsw'
+import './global.css'
 
 async function boot(): Promise<void> {
   const container = document.getElementById('root')
