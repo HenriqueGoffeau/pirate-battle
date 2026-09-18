@@ -1,0 +1,17 @@
+.DS_Store
+Thumbs.db
+
+node_modules/
+dist/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+*.log
+
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
