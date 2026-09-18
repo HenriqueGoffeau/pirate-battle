@@ -1,30 +1,34 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useSearchParams } from 'react-router'
+import { createMatchConfig } from '../../config/matchConfig'
+import { defaultOptions } from '../../config/userOptions'
 import { GameSession } from '../../session/GameSession'
 import { createSessionStore } from '../../session/store'
 import styles from './GameHost.module.css'
 
-type GameHostProps = { mapId: string }
+const newSeed = () => Math.floor(Math.random() * 2 ** 31)
 
-export function GameHost({ mapId }: GameHostProps) {
+export function GameHost() {
   const canvasHostRef = useRef<HTMLDivElement>(null)
   const sessionRef = useRef<GameSession | null>(null)
   const [store] = useState(createSessionStore)
+  const [matchConfig] = useState(() => createMatchConfig(defaultOptions, newSeed()))
   const hud = useSyncExternalStore(store.subscribe, store.getSnapshot)
   const [searchParams] = useSearchParams()
   const debugOverlay = searchParams.get('dev') === '1'
+  const mapId = matchConfig.arena.mapId
 
   useEffect(() => {
     const host = canvasHostRef.current
     if (!host) return
-    const session = new GameSession(host, store, { mapId, debugOverlay })
+    const session = new GameSession(host, store, { matchConfig, debugOverlay })
     sessionRef.current = session
     void session.start()
     return () => {
       session.dispose()
       if (sessionRef.current === session) sessionRef.current = null
     }
-  }, [mapId, debugOverlay, store])
+  }, [matchConfig, debugOverlay, store])
 
   return (
     <div className={styles.root}>

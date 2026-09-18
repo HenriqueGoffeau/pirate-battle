@@ -1,34 +1,47 @@
 import { Application } from 'pixi.js'
 import { ensureLoaded, type CombatAssets } from '../assets/loader'
 import { tiledMapSource } from '../assets/tiledMap'
-import { GameConfig } from '../config/gameConfig'
+import type { MatchConfig } from '../config/matchConfig'
+import { InputState } from '../input/inputState'
+import { attachKeyboard } from '../input/keyboard'
 import { createDebugOverlay } from '../render/debugOverlay'
 import { createArenaStage, type ArenaStage } from '../render/stage'
 import { attachViewport, type Viewport } from '../render/viewport'
+import { RealClock, type Clock } from '../shared/clock'
 import type { MapData } from '../shared/mapData'
+import type { World } from '../sim/entities'
+import { step } from '../sim/step'
+import { createWorld } from '../sim/world'
+import { startLoop } from './loop'
 import type { SessionStore } from './store'
 
-export type GameSessionOptions = { mapId: string; debugOverlay: boolean }
+export type GameSessionOptions = { matchConfig: MatchConfig; debugOverlay: boolean; clock?: Clock }
 
-const letterboxColor = '#243447'
+const letterboxColor = '#e4edf2'
 const maxResolution = 2
 
 export class GameSession {
   readonly store: SessionStore
+  readonly input = new InputState()
   private readonly host: HTMLElement
-  private readonly mapId: string
+  private readonly matchConfig: MatchConfig
   private readonly debugOverlay: boolean
+  private readonly clock: Clock
   private disposed = false
   private starting = false
+  private running = false
   private app: Application | null = null
   private arena: ArenaStage | null = null
   private viewport: Viewport | null = null
+  private stopLoop: (() => void) | null = null
+  private detachKeyboard: (() => void) | null = null
 
   constructor(host: HTMLElement, store: SessionStore, options: GameSessionOptions) {
     this.host = host
     this.store = store
-    this.mapId = options.mapId
+    this.matchConfig = options.matchConfig
     this.debugOverlay = options.debugOverlay
+    this.clock = options.clock ?? new RealClock()
   }
 
   async start(): Promise<void> {
@@ -48,9 +61,15 @@ export class GameSession {
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
+    this.running = false
+    this.stopLoop?.()
+    this.detachKeyboard?.()
+    this.input.clear()
     this.viewport?.detach()
     this.arena?.destroy()
     this.app?.destroy(true, { children: true, texture: false, textureSource: false })
+    this.stopLoop = null
+    this.detachKeyboard = null
     this.viewport = null
     this.arena = null
     this.app = null
@@ -66,7 +85,7 @@ export class GameSession {
         if (!this.disposed) this.store.publish({ loadProgress: progress })
       })
       if (this.disposed) return
-      map = await tiledMapSource.load(this.mapId)
+      map = await tiledMapSource.load(this.matchConfig.arena.mapId)
       if (this.disposed) return
       await app.init({
         resolution: Math.min(window.devicePixelRatio, maxResolution),
@@ -84,20 +103,44 @@ export class GameSession {
       return
     }
 
+    const { arena: arenaConfig } = this.matchConfig
     this.app = app
     app.canvas.setAttribute('role', 'img')
     app.canvas.setAttribute('aria-label', 'Battle arena')
     this.host.appendChild(app.canvas)
-    this.arena = createArenaStage(app.renderer, assets, map)
-    if (this.debugOverlay) this.arena.root.addChild(createDebugOverlay(map, { edgeBand: GameConfig.arena.edgeBand }))
-    app.stage.addChild(this.arena.root)
+    const world = createWorld(this.matchConfig, map)
+    const arena = createArenaStage(app.renderer, assets, map, {
+      fogWidth: arenaConfig.fogWidth,
+      fogAlpha: arenaConfig.fogAlpha,
+      fogColor: arenaConfig.fogColor,
+    })
+    if (this.debugOverlay) arena.root.addChild(createDebugOverlay(map, { edgeBand: arenaConfig.edgeBand }))
+    app.stage.addChild(arena.root)
+    this.arena = arena
     this.viewport = attachViewport(
       this.host,
       app.renderer,
-      this.arena.root,
-      { width: map.cols * map.tile, height: map.rows * map.tile },
+      arena.root,
+      { width: world.width, height: world.height },
       () => app.render(),
     )
-    this.store.publish({ matchState: 'ready', loadProgress: 1 })
+    this.detachKeyboard = attachKeyboard(this.input)
+    this.running = true
+    this.stopLoop = startLoop(this.clock, {
+      isRunning: () => this.running,
+      step: (dt) => this.tick(world, dt),
+      render: () => {
+        arena.draw(world)
+        app.render()
+      },
+    })
+    this.store.publish({ matchState: 'running', loadProgress: 1 })
+  }
+
+  private tick(world: World, dt: number): void {
+    step(world, dt, this.input.sample())
+    if (!world.ended) return
+    this.running = false
+    this.store.publish({ matchState: 'ended', endReason: world.endReason ?? undefined })
   }
 }

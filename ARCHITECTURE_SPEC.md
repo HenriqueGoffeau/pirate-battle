@@ -13,7 +13,7 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 
 | Topic | Decision |
 | --- | --- |
-| Stack | Vite · React 19 · TypeScript strict · PixiJS v8 · TanStack Query v5 · Axios · MSW v2 · Playwright · Vitest (4 tests only) · CSS Modules · ESLint with `eslint-plugin-boundaries` · React Router (real URLs). TypeScript pinned to 6.0 because typescript-eslint does not support 7.x |
+| Stack | Vite · React 19 · TypeScript strict · PixiJS v8 · TanStack Query v5 · Axios · MSW v2 · Playwright · Vitest (6 small suites, listed in §17) · CSS Modules · ESLint with `eslint-plugin-boundaries` · React Router (real URLs). TypeScript pinned to 6.0 because typescript-eslint does not support 7.x |
 | Deploy | Self-hosted Docker image (Node build stage → nginx serving `dist` on plain HTTP `:8080`) behind the author's existing reverse proxy, which terminates TLS with a trusted certificate on a dedicated subdomain root. HTTPS is mandatory: MSW's service worker only registers in a secure context. Subdomain root means no Vite `base`, router `basename` or worker-scope changes |
 | Arena | One hand-authored map, 24×14 tiles of 64 px (1536×896 logical), always fully visible at the same scale rule on every device (fair ranking). **No letterbox bars**: the sea continues past the arena on any screen shape and thickens into dense fog. No camera, no cropping, no procedural generation |
 | Spawn points | **Entry points on the arena border**, authored in map data. Enemies are created just outside the rim, hidden, and **sail in through the fog** in an `arriving` state (straight in, can't fire, can't be hit or ram) until the whole hull is inside. Every entry allows both kinds; the type is a seeded weighted pick. Runtime filter = entry distance to the player's **current** position ≥ `minPlayerDist[kind]` (Chaser 448, Shooter 320: the rammer gets a longer runway, EN-06) and no ship (player included) within `occupancyRadius` of the arrival point. No entry is locked to a kind by position |
@@ -24,10 +24,10 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 | Ranking rows | One row per match; all rows of the local player get the YOU badge; default view = current options |
 | Tie-break | score DESC → effectiveSec ASC → playedAt ASC → matchId ASC |
 | Ship colors | Player = black/skull (color index 1). Chaser = red/cross (2). Shooter = blue/horse (4) |
-| Enemies | Shooter common (0.7), Chaser rare (0.3) but high impact damage. First two spawns forced one of each. Cap 12 alive |
+| Enemies | Shooter common (0.7), Chaser rare (0.3): **slower than the player (105 vs 120) but rams for 30**, so it can always be outrun in a straight line but punishes being ignored or cornered (play-test: with no rear cannon, a faster Chaser behind you made the hit unavoidable). First two spawns forced one of each. Cap **6** alive (was 12; play-test: "too many enemies") |
 | Shooter weapon | Cannons are an array per ship kind, each with its own cooldown. Ships with `[front]`; sides are two appended config entries (stretch #1). Must be aligned within `aimTolerance` and have line of sight |
 | Fire behavior | Hold to fire at cooldown rate (level-triggered). Cooldown sweep on fire buttons via one CSS animation per shot |
-| Ship contact | Chaser↔player: damage + chaser self-destructs (no score). Shooter↔player: push apart, no damage; Shooter AI keeps a standoff distance. Enemy↔enemy: no collision, separation force. No friendly fire |
+| Ship contact | Chaser↔player: damage + chaser self-destructs (no score). Shooter↔player: push apart, no damage; Shooter AI keeps a standoff distance. Enemy↔enemy: **pushed apart half each** (added after play-test: enemies stacked in lanes) plus separation steering. No friendly fire |
 | Health | 100, no regeneration, no pickups |
 | Pause | Manual (P/Esc) + auto on blur / hidden / portrait. Resume by button (no countdown unless stretch). Input cleared on pause/blur/resume/dispose |
 | Pause → Options | Does not exist. Pause dialog = Resume / Main Menu |
@@ -40,9 +40,9 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 | Bindings | W/↑ forward · A/D or ←/→ turn · Space fire front · Q/E broadside left/right · P/Esc pause. `event.code` based. No remapping |
 | Loop | Fixed 60 Hz step with accumulator, **no render interpolation**; own rAF loop via injectable `Clock`; Pixi ticker off (`autoStart: false`, manual `app.render()`) |
 | Hulls | Two circles per ship (centers ±22 px along heading, r 26); projectiles swept as segments |
-| Ship movement | **Acceleration and drag are mandatory**: forward speed ramps toward max while thrusting and coasts down when not; every contact (islands, arena edge, other ships) slides instead of stopping dead. Same model for player and enemies (§7) |
-| Arena edge | **Soft edge**: inside a one-tile band the sea pushes ships back, harder the deeper they go; only the outward part of motion is removed, so ships slide along the rim. Shown by an **open-sea fog** band drawn above ships along the rim; enemies spawn inside it and sail out of the fog (§11) |
-| Avoidance | Feelers + separation + stuck rule; flow field is a written contingency only |
+| Ship movement | **Acceleration and drag are mandatory**: forward speed ramps toward max while thrusting and coasts down when not; **turning has rudder inertia** (turn speed ramps up and eases out); every contact (islands, arena edge, other ships) slides instead of stopping dead. Same model for player and enemies (§7) |
+| Arena edge | **Soft edge**: inside a one-tile band the sea resists outward motion, harder the deeper the ship is and the more directly it heads out; a ship heading inward or along the rim is never pushed, so ships slide along the rim and arriving enemies are never thrown forward. Shown by **white, cloudy open-sea mist** drawn above ships along the rim; enemies sail in out of it (§3) |
+| Avoidance | Island-corner detours when line of sight is blocked + feelers + separation steering + enemy↔enemy push-apart + stuck rule (§7, §8); the flow field is no longer needed |
 | Test hooks | `window.__PB_TEST__` in every build, gated by `?test=1` |
 | Estimate to state | "Two days (≈ 28 h): day 1 playable core + Pixi lifecycle on the public URL; day 2 screens, ranking/history with mocks, Playwright, profiling, docs" |
 
@@ -79,10 +79,12 @@ src/
   config/     gameConfig.ts, userOptions.ts (limits, validate), matchConfig.ts (snapshot, configKey, custom)
   shared/     clock.ts (Clock, RealClock, ManualClock), rng.ts (mulberry32), storage.ts, uuid.ts, math.ts,
               mapData.ts (MapData, MapSource types: shared because assets implements MapSource and may import only shared)
-  sim/        world.ts, entities.ts, map.ts (solid-mask queries), step.ts, snapshot.ts,
-              systems/ (ai, movement, weapons, projectiles, collision, damage, spawn, cleanup, effects, endCheck)
-  render/     stage.ts, views/ (ShipView, ProjectileView, HealthBarView), effects.ts, viewport.ts
-  input/      bindings.ts, inputState.ts, keyboard.ts, pointer.ts
+  sim/        entities.ts (types), world.ts (createWorld, createShip, hull circles, effects, damageStage), grid.ts (solid
+              mask, rounded island corners, island bounds, DDA raycast, circle push-out), step.ts,
+              systems/ (ai, movement, weapons, projectiles, collision, damage, spawn, lifecycle = cleanup + effects + endCheck)
+  render/     stage.ts (layers + per-frame draw), views/ (ShipView, HealthBarView), effects.ts, fog.ts, viewport.ts, debugOverlay.ts
+  input/      bindings.ts, inputState.ts (keys by code + button actions → ShipIntent), keyboard.ts, pointer.ts (M4)
+  shared/     … + intent.ts (ShipIntent, shared by input and sim)
   assets/     manifest.ts, loader.ts (ensureLoaded), parseTiledMap.ts (pure JSON → MapData, used by Vitest), tiledMap.ts (MapSource impl)
   session/    GameSession.ts, loop.ts, lifecycle.ts, store.ts, perfProbe.ts
   data/       contracts/, http.ts, api.ts, queries.ts, outbox.ts, local.ts
@@ -150,9 +152,12 @@ touch buttons, pause button, dialogs, live region. Cooldown sweep = CSS animatio
 Pixi draw order: **sea** → baked tiles → ships → projectiles → effects → **fog** → health bars.
 - Sea (built at M1): a `TilingSprite` of the water tile reaching 2048 px beyond every arena edge, starting on a tile boundary so
   the pattern continues seamlessly from the baked arena; it fills any screen shape (even 32:9) instead of letterbox bars.
-- Fog (M2): a static sprite built once per session. Inside the arena it is a gradient band `fogWidth` px along all four edges,
-  rising to `fogAlpha` at the rim (navy-teal, corners blended); **beyond the rim it keeps thickening to fully opaque about one
-  tile out and stays opaque to the end of the sea.** It sits above ships, so a ship near the rim is visibly swallowed by haze
+- Fog (M2): a static sprite built once per session, painted on a small canvas (one pixel per 8 world px, smoothed on upscale).
+  It is **white-blue cloudy mist** (`fogColor 0xe4edf2`, changed from navy after play-testing: "cloudy, not dark"). Inside the
+  arena its density rises toward the rim up to `fogAlpha`, and deterministic two-octave value noise (render-side hash, no RNG)
+  varies both density and reach (0.7–1.3 × `fogWidth`), so the inner edge is an irregular line of cloud puffs, not a band;
+  **beyond the rim it keeps thickening to fully opaque about one tile out and stays opaque to the end of the sea** (a cloud
+  bank; on wide phones the side zones are this bank). It sits above ships, so a ship near the rim is visibly swallowed by haze
   (the cue that the edge pushes back), and arriving enemies, created 64 px outside, are fully hidden and emerge from it. The
   opaque outer fog replaces any mask or frame. Health bars stay above it so information is never hidden; arriving ships show no bar.
 Sea and fog textures are destroyed with the stage (the sea shares the atlas texture, destroyed with `texture: false`).
@@ -161,7 +166,10 @@ Sea and fog textures are destroyed with the stage (the sea shares the atlas text
 
 ```ts
 interface Clock { now(): number; onFrame(cb: (t: number) => void): () => void }
-// RealClock = performance.now + requestAnimationFrame. ManualClock.advance(ms) fires cb once per 16.667 ms.
+// RealClock = performance.now + requestAnimationFrame. ManualClock.advance(ms) fires cb once per 16.667 ms of accumulated
+// time, however advance() is chunked (it tracks the next frame time; an early version dropped frames for advances < 16.667 ms).
+// Verified at M2: the same seed + scripted input through startLoop + ManualClock gives an identical world for 1000 ms and 7 ms
+// chunks, and equals calling step() directly.
 
 const STEP = 1000/60, MAX_FRAME = 250
 frame(t):
@@ -212,13 +220,13 @@ export const GameConfig = Object.freeze({
                { id: 'r3', group: 'right', angle: 90,  offset: 22,  damage: 12, speed: 380, range: 420, cooldown: 1.4 },
              ] },
   enemies: {
-    chaser:  { maxHealth: 40, speed: 165, accel: 220, drag: 120, turnRate: 3.0, radius: 26, impactDamage: 35, colorIndex: 2, cannons: [] },
+    chaser:  { maxHealth: 40, speed: 105, accel: 180, drag: 120, turnRate: 2.4, radius: 26, impactDamage: 30, colorIndex: 2, cannons: [] },
     shooter: { maxHealth: 60, speed: 110, accel: 130, drag: 90, turnRate: 2.0, radius: 26, colorIndex: 4,
                attackRange: 380, minRange: 220, aimTolerance: 0.26,
                cannons: [ { id: 'front', group: 'front', angle: 0, offset: 0, damage: 10, speed: 360, range: 440, cooldown: 2.2 } ] },
                // stretch: append { angle: -90 } and { angle: 90 } entries for side cannons
   },
-  spawn:   { weights: { shooter: 0.7, chaser: 0.3 }, forceBothWithin: 2, maxAlive: 12,
+  spawn:   { weights: { shooter: 0.7, chaser: 0.3 }, forceBothWithin: 2, maxAlive: 6,
              minPlayerDist: { shooter: 320, chaser: 448 }, occupancyRadius: 80 },
   projectile: { radius: 5, maxLifetime: 3 },
   damageStages: [1, 0.66, 0.33, 0],   // health fraction thresholds → sprite stage 0..3
@@ -234,6 +242,20 @@ export const configKey = (o: UserOptions) => `s${o.sessionSeconds}-i${o.spawnInt
 ```
 
 Units: px/s, px/s² (accel, drag), rad/s, seconds; logical pixels of the 1536×896 world. Balance numbers are placeholders; tune once in M2's last 30 min.
+
+**As built (M2), `src/config/gameConfig.ts` is the source of truth**; it is typed as `BalanceConfig` and deep-frozen. Additions to
+the block above: per ship `hullOffset: 22`; per cannon `muzzle` (front 56, broadside 30: distance from the hull where the ball
+appears); per ship `turnAccel` (rad/s²: player 5, chaser 6, shooter 4.5); tuned after play-testing: player `turnRate 1.7`
+(was 2.4, "too fast"), Chaser `speed 105 / accel 180 / turnRate 2.4 / impactDamage 30` (was 165/220/3.0/35, then 140/…/15; final: slower than the
+player but turns tighter, so it is outrun in a straight line, not out-turned; measured with scripted players over 25 seeds: a
+player who turns and fires sinks 37 Chasers and takes 34 rams, versus 28 and 50 with the 140/15 Chaser), Shooter `turnRate 1.6`;
+`arena.fogColor 0xe4edf2`, `fogWidth 128`, `fogAlpha 0.8`; `spawn.arrivalSpeed 0.5` (share of top speed at creation);
+`ai.steerGain 4`, `ai.steerDeadZone 0.01`;
+`islands.cornerRadius 26`; `ai` = separationRadius 110 (was 70), feelerLength 48, stuckAfter 1, stuckCommit 1.5, orbitFlipAfter 0.5,
+detourClearance 48, detourReach 40, detourStickiness 1.15, aimLead 0.4, aimThrust 0.35, weights chase 1 / separation 1 (was 0.6) /
+feeler 1.2; `spawn.arrivalMargin 16`; `effects` durations (muzzle 0.12, impact 0.3, explosion 0.7, wreck 1.8, hitFlash 0.12).
+`forceBothWithin` is implemented as a seeded shuffle of [chaser, shooter] consumed by the first two successful spawns.
+`MatchConfig` = deep clone of the balance + options + `configKey` + `custom` + `seed`, frozen at creation.
 Ship sprites: file `ship_{n}` with `stage = floor((n-1)/6)`, `color = (n-1)%6`; bow faces +Y in the source, so `sprite.rotation = heading − π/2` (verified at M1). Heading: radians, 0 = +X, clockwise positive (screen y down).
 
 ## 6. Map data (D-A/B/C)
@@ -288,21 +310,32 @@ DOM legend explains the colours. `npm run convert-assets` rebuilds the map once 
 | Pair | Test | Response |
 | --- | --- | --- |
 | Ship ↔ island | each hull circle vs solid tiles in its 3×3 neighbourhood (circle↔AABB), two passes | push out along min-penetration axis, keep tangential velocity (slide) |
-| Ship ↔ arena edge | each hull circle's outer edge vs the arena bounds: soft band `edgeBand` px wide inside the edge, hard limit at the edge | in the band: move inward along the edge normal by `edgePush · depth/edgeBand` px/s; at the limit: clamp, removing only the outward component (slide). No damage |
+| Ship ↔ arena edge | each hull circle's outer edge vs the arena bounds: soft band `edgeBand` px wide inside the edge, hard limit at the edge | in the band: move inward along the edge normal by `edgePush · depth/edgeBand · max(0, heading · outwardNormal)` px/s (only ships heading out are pushed); at the limit: clamp, removing only the outward component (slide). No damage |
 | Shot ↔ island | DDA walk of the tile grid along this tick's segment | consume at first solid tile, splash effect |
 | Shot ↔ ship | swept segment vs each hull circle (r + 5), opposing faction only | earliest hit wins; consume; push `{targetId, amount, sourceId}` to hits |
 | Chaser ↔ player | any hull circle pair | player −impactDamage; chaser dead with `killedBy: 'self'` (no score), explosion |
 | Shooter ↔ player | hull circles | push both apart half-way, no damage |
-| Enemy ↔ enemy | none | separation force in AI |
+| Enemy ↔ enemy | hull circles (arriving ships skipped) | push both apart half-way, no damage; separation steering keeps them fanned out before contact. Measured headless (15 seeds × idle and moving player, 120 s): deeply overlapping enemy pairs 16 % of enemy-ticks before, 0 % after |
 | Anything ↔ arriving enemy | skipped | arriving ships can't be hit, can't ram, don't separate (§8 Arrival) |
 
-**Movement model (collide and slide).** A ship has `heading` and a scalar forward `speed`. Each tick: turn by `turn · turnRate · dt`;
+**Movement model (collide and slide).** A ship has `heading`, a scalar forward `speed` and a `turnVelocity`. Each tick:
+`turnVelocity` moves toward `turn · turnRate` at `turnAccel` rad/s², then `heading += turnVelocity · dt` (rudder inertia);
 `speed` moves toward `thrust ? max : 0` at `accel` (thrusting) or `drag` (coasting) px/s²; intended displacement = heading · speed · dt;
 then edge push, edge clamp and island push-out correct the position. Finally `speed = clamp(dot(actual displacement, heading) / dt, 0, speed)`,
 so a ship pressed head-on into land or the rim bleeds speed to zero instead of storing it, and one meeting it at an angle keeps
 the tangential share and slides. There is no reverse; releasing thrust coasts. Turning is allowed at any speed. Equilibrium in the
 edge band at full speed is `edgeBand · speed / edgePush` deep (≈ 32 px for the player), so the hard limit is rarely touched.
 Arriving enemies skip the edge push and clamp (they start outside the arena); the band applies from the tick they finish arriving.
+Because the push only resists outward headings, a ship that has just arrived (heading inward) is never shoved: an earlier version
+pushed every ship in the band, which threw new arrivals forward at up to 240 px/s ("slow, then suddenly fast", play-test bug).
+Measured headless: an enemy's movement from creation to one second after arrival never exceeds its own top speed.
+
+As built (M2): the speed clamp measures displacement **excluding the soft edge drift** (the drift is applied separately, like a
+current), so pressing into the rim holds the ship in the band at full throttle while islands and the hard clamp still bleed
+speed. Island tiles whose two outer neighbours are water get a rounded outer corner (`islands.cornerRadius`): a hull circle in
+that corner zone collides with a circle instead of the tile box, so ships can cut the transparent corner of the art.
+Grid islands are also stored as bounding rectangles (connected components) for the AI detours in §8.
+Measured headless over 20 seeds (idle player, 60 s): zero ticks with a hull circle inside a solid tile.
 
 No broad phase (≤ 13 ships × ~40 shots). Damage applied only in `damageSystem` from the hits queue; a projectile marked
 `consumed` in step 6 cannot hit again (CB-04). Dead ships flagged in 7, removed in 9 (CB-06).
@@ -310,7 +343,10 @@ No broad phase (≤ 13 ships × ~40 shots). Damage applied only in `damageSystem
 ## 8. Enemy AI and spawning (EN-01..06)
 
 ```
-steerTo(ship, dir, dt): err = wrapAngle(atan2(dir) - heading); turn = clamp(err/(turnRate*dt), -1, 1); thrust = |err| < 90° ? 1 : 0.3
+steerTo(ship, dir): err = wrapAngle(atan2(dir) - heading)
+  rate = min(turnRate, sqrt(2·turnAccel·|err|), |err|·steerGain)       // brakes before the target angle (rudder inertia)
+  turn = |err| < steerDeadZone ? 0 : sign(err)·rate/turnRate; thrust = |err| < 90° ? 1 : 0.3
+  (a plain sqrt controller chattered left/right ~16 times per enemy-second; with the linear zone and dead zone: ~0.24)
 desired(enemy) = normalize(toPlayer*1.0 + separation*0.6 + feeler*1.2)
   separation = Σ (pos - other.pos)/d² for enemies within 70 px
   feeler     = 48 px ray ahead vs solid mask → lateral nudge when blocked
@@ -322,6 +358,20 @@ SHOOTER: d = dist(player)
   else            → steerTo(perp(toPlayer)*orbitSign + feeler*1.2)     // orbit; orbitSign flips when blocked > 0.5 s
   for each cannon: if |wrapAngle(cannonDir - angleTo(player))| < aimTolerance and cooldown ready and lineOfSight → fire
 lineOfSight reuses the shot↔island DDA.
+
+As built (M2), two changes found by watching seeded matches:
+- **Detours around islands.** Feelers and the stuck rule cannot handle an island directly between an enemy and the player (a
+  Chaser slid back and forth along the island's edge for 6 s). When there is no line of sight to the player, the chase target
+  becomes the best island detour point: the corners of every island's bounding rectangle pushed out by `detourClearance`,
+  filtered to those visible from the enemy and not already reached (`detourReach`), scored by
+  `|enemy→point| + |point→player|`; the current point is kept unless a new one is `detourStickiness` better. Islands are
+  guaranteed rectangles, so one or two hops always suffice. This replaces the flow-field contingency. Shooters without line
+  of sight also chase (so they come around to get a shot).
+- **Shooters aim when loaded.** With a front-only cannon, pure orbiting points the cannon tangentially and never fires. In
+  the orbit band a Shooter turns to face the player at `aimThrust` when any cannon is ready within `aimLead`, and orbits while
+  reloading. If stretch #1 adds side cannons, orbiting broadsides work without this rule.
+Measured headless over 20 seeds with an idle player at the start: Chaser arrival→ram median 4.8 s, p90 11.6 s (far entries);
+Shooters fire about 0.2 shots per second each; an idle player sinks in 15–32 s at the default 3 s interval.
 ```
 
 Spawning: `nextSpawnAt += spawnIntervalSec` in sim time (timer keeps advancing even when a spawn is skipped).
@@ -330,15 +380,17 @@ types appear in every standard match), then keep the entries whose `kinds` inclu
 position is ≥ `minPlayerDist[type]`, and with no ship (player included) within `occupancyRadius` of the arrival point
 `entry + heading · tile`; pick one of those with the seeded RNG. Skip when `alive ≥ maxAlive` or no entry passes. A skipped
 forced type stays first in the queue for the next interval. The spawn counts (score timeline, `maxAlive`, TEST-05) at creation.
-EN-06 reasoning: an arriving Chaser is harmless until fully inside (~0.7 s at 165 px/s), then starts ≥ ~400 px away, which
-leaves ~2.4 s from first sight in the fog to impact, enough to turn away or land the two front-cannon hits that sink it.
+EN-06 reasoning: an arriving Chaser enters at half speed and is harmless until fully inside (~1.5 s), then starts ≥ ~350 px
+away at up to 105 px/s, slower than the player, which leaves ~4 s from first sight in the mist to impact, and a straight-line
+escape always works; enough to turn away or land the two front-cannon hits that sink it.
 
 **Arrival.** A new enemy is created at `entry − heading · (hullExtent + 16)` (hullExtent = hull offset + radius = 48 px, so it
-starts 64 px outside and fully hidden), with `heading` = the entry's inward heading, `speed` = its max speed, and
-`arriving = true`. While arriving: AI is skipped and the intent is full thrust straight ahead; `movementSystem` skips the edge
-push and clamp; `weaponSystem` skips it; `collisionSystem` ignores it for shots, ship contact and separation. `arriving` clears
-on the first tick both hull circles are fully inside the arena (each centre ≥ radius from every edge), ≈ 0.7–1 s after
-creation. The ship appears out of the opaque fog beyond the rim (§3), which hides the part still outside the arena.
+starts 64 px outside and fully hidden), with `heading` = the entry's inward heading, `speed` = `arrivalSpeed` (0.5) × its
+max speed, and `arriving = true`. While arriving: AI is skipped and the intent is full thrust straight ahead, so the ship
+visibly accelerates out of the mist (measured: 50% of top speed at creation, 100% when arrival ends); `movementSystem` skips
+the edge push and clamp; `weaponSystem` skips it; `collisionSystem` ignores it for shots, ship contact and separation.
+`arriving` clears on the first tick both hull circles are fully inside the arena (each centre ≥ radius from every edge),
+≈ 1 s after creation. The ship appears out of the opaque cloud bank beyond the rim (§3), which hides the part still outside.
 Enemies use the same `movementSystem` as the player; AI writes intents only.
 
 ## 9. Match lifecycle (MR-*, CFG-06)
@@ -363,6 +415,13 @@ States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused →
   Called inside `GameSession.start()` before `app.init()`; second match hits `ready` instantly.
 - Texture index `textures.ship[stage][color]` built once. `ShipView` swaps texture when `damageStage(health/max)` changes (FX-03).
 - Effects: explosion sprites scaled/faded in code (FX-02); muzzle flash = small explosion sprite 120 ms (FX-01); hit flash tint on the ship (FX-04).
+  As built: `impact` burst where a ball hits a ship or an island; `wreck` = the ship's stage-3 sprite drawn under ships, fading
+  and shrinking over 1.8 s. Effect and ball sprites are pooled in the render layer (index-mapped each frame, extras hidden).
+- Over-ship health bars (MR-06): `enemy_health_frame` + fill (green for the player, red for enemies), scale 0.45, 70 px above
+  the ship, flipped below it when there is no room at the top edge; hidden while arriving. The fill is clipped, not stretched,
+  per the sheet's `fill_rect`/`clip_axis`: a `dynamic` texture whose `frame.width` and `orig.width` shrink together. Pixi 8
+  sprites size themselves from `orig` and only listen to texture updates when the texture is `dynamic`; changing only `frame`
+  stretches the fill instead (found at M2).
 - Tests simulate failure via Playwright **`context.route`**`('**/ships.json', route => route.abort())`. `page.route` does not work
   here: once MSW's service worker controls the page, asset fetches are re-issued by the worker, and only `context.route`
   intercepts service-worker traffic in Chromium (found at M1). The same applies to any request-level interception in E2E.
@@ -478,7 +537,10 @@ stretch adds 08, 10). One spec file per TEST-ID, 1–3 tests each (~22 total). F
 `/?test=1&scenario=X&reset=1`, waits for `body[data-msw-ready]`, fails on console errors. `?test=1` also disables ambient
 animation and the render RNG. Visual baselines: menu, arena after `advance(5000)` seed 42 no input, result after timeUp;
 `maxDiffPixelRatio 0.005`; generated in the Playwright Docker image. `page.clock` for wall-clock waits (outbox backoff) in data specs only.
-Reporter html + list, `trace: 'retain-on-failure'`. Vitest (4 tests): comparator, validateOptions, outbox reducer, segment-circle.
+Reporter html + list, `trace: 'retain-on-failure'`. Vitest (6 suites, no others): comparator (M5), validateOptions (M4), outbox reducer (M5), segment-circle (M2, `shared/math.test.ts`),
+spawn entries (M1, `assets/parseTiledMap.test.ts`), **determinism** (M2, `session/determinism.test.ts`: same seed + scripted input
+through `startLoop` + `ManualClock` gives an identical world for 1000 ms and 7 ms advances, and differs for another seed; added
+because it caught a ManualClock bug, and verified to fail against the old code).
 
 Per-spec map (hooks · scenario · seed): the D9 table of design session 6 (Quality), kept outside this repository; it is
 inlined here in M6.
@@ -509,7 +571,7 @@ Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A
 | M0 | 1.5 | Vite/React/TS strict, layer folders + lint boundaries, Playwright/Vitest installed, MSW worker file, Dockerfile + nginx.conf + compose | Local Docker image verified on `localhost:8080`: extensionless paths fall back to the app, `/result` reload works, `mockServiceWorker.js` returns 200 as JavaScript with `no-cache`, a missing asset is a 404, `/static/*` is immutable, `body[data-msw-ready]` set, console clean. Public deploy is deferred to CP1 |
 | M1 | 4 | Atlas conversion, tile probe, Tiled map + loader, ensureLoaded with progress/error, GameSession skeleton (Strict-Mode-safe), static tiles, one ship, sea beyond the arena (no bars)/DPR | Arena renders on desktop + phone; mount/unmount/mount leaves one canvas, zero listeners |
 | M2 | 6 (4.5 + 1.5 of the day-1 buffer) | GameConfig, world/step, movement with accel/drag + collide-and-slide, islands + soft edge, open-sea fog (thickening to opaque beyond the rim), cannons array with cooldowns, swept shots, damage/scoring, border entries with arrival state, Chaser/Shooter AI, keyboard, over-ship bars, damage stages, explosion + wreck | Full keyboard match playable; enemies sail in through the fog; seeded run repeats under ManualClock |
-| M3 | 2 | Loop, Clock, lifecycle, pause/auto-pause/resume, store + HUD, Pause dialog, minimal Result, abandon on route change | HUD updates on change only; blur pauses; held keys don't leak; Play Again resets |
+| M3 | 2 | Lifecycle, pause/auto-pause/resume, store + HUD, Pause dialog, minimal Result, abandon on route change (loop, RealClock, ManualClock and keyboard input with clear-on-blur already landed in M2) | HUD updates on change only; blur pauses; held keys don't leak; Play Again resets |
 | CP1 | h14 | Day-1 buffer: 0.5 h left after M2's planned 1.5 h → M2 overrun first; stretch #1–2 move to day 2's buffer. If M2 runs long, cut in this order: fog gradient → plain darker band; arrival → fade-in at the entry; acceleration and slide stay. Public deploy: homelab clone, `docker compose up -d --build`, Caddy site `reverse_proxy` to the container on the subdomain | M0–M3 deployed over HTTPS on the subdomain: `mockServiceWorker.js` 200 as JavaScript with `no-cache`; `/result` loads directly and on reload; `document.body.dataset.mswReady === "true"`; footer SHA = `git rev-parse --short HEAD` |
 | M4 | 3.5 | Wood/gold primitives, Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), Result status row, touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus | All screens usable by keyboard and touch; no clipping at 640×360 |
 | M5 | 3 | Contracts, Axios, queries, outbox, storage codec, handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
@@ -545,7 +607,7 @@ env vars (`VITE_COMMIT_SHA` build arg only); controls; gameplay config + dev pan
 | Async `app.init` under Strict Mode | `disposed` guard after every await; idempotent dispose; checked at M1 exit | module-level Application per host element |
 | MSW in production (worker path / rewrite / secure context) | deploy in M0; nginx fallback only for extensionless paths; HTTPS with a trusted certificate; worker `no-cache`; start() in try/catch | offline-mode banner, tabs in error state, game unaffected |
 | Homelab unreachable during evaluation (DEL-02) | `restart: unless-stopped` + healthcheck; commit SHA in the menu footer; README states the self-hosted choice and the `docker compose` command | static mirror of the same `dist/` on Cloudflare Pages (≈ 10 min, M7) |
-| Enemies stuck on islands | convex islands, ≥ 3-tile lanes, stuck rule, separation | flow field BFS (1.5 h) |
+| Enemies stuck on islands | Mitigated at M2: rectangular islands, ≥ 3-tile lanes, island-corner detours when line of sight is blocked, stuck rule, separation (measured, §8) | flow field BFS (1.5 h), no longer expected to be needed |
 | Flaky visual baselines | Docker image, self-hosted font, fonts.ready, ambient off, seed 42 | mask arena; maxDiffPixelRatio 0.02 |
 | Tile index assumption | Closed at M1: index layout read from the sheet with a labelled contact sheet; map preview matched in-game render | — |
 | M2 overrun | D5 order, tiny Vitest per system, CP1 gate | day-1 buffer; Shooter stays front-only |
