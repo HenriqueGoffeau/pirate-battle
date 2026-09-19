@@ -401,6 +401,7 @@ test fails, its trace, video and screenshot are kept under `test-results/` and l
 
    | Hook | Returns or does |
    | --- | --- |
+   | `trace(ticks)` | A snapshot after every tick, drawing only the last frame |
    | `getMap()` | Solid mask, entries, player start |
    | `getMatchState()` | The current match state |
    | `waitForState(state)` | Resolves when the match reaches that state |

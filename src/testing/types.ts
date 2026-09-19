@@ -83,6 +83,7 @@ export interface PbTestApi {
   useManualClock(): void
   advance(ms: number): void
   step(ticks: number): void
+  trace(ticks: number): TestSnapshot[]
   getSnapshot(): TestSnapshot | null
   getMap(): TestMap | null
   getMatchState(): TestMatchState | null

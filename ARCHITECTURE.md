@@ -478,7 +478,8 @@ stateDiagram-v2
   - the map's spawn entries (each on the edge, facing inward, with a clear 3×3 water lane that reaches the player start);
   - determinism.
 - Test API ([testApi.ts](src/testing/testApi.ts)): it exists only with `?test=1`, installed from `main.tsx` before MSW starts, as its own ≈ 2.6 kB chunk. It offers:
-  - `setSeed`, `useManualClock`, `advance(ms)` and `step(ticks)`;
+  - `setSeed`, `useManualClock`, `advance(ms)` and `step(ticks)`, which draw only the last frame of each call;
+  - `trace(ticks)`, which returns a snapshot after every tick of one advance (used by the movement, combat and enemy specs, so a 600-tick trace draws once instead of 600 times);
   - `getSnapshot()`, a frozen copy of the state, time, score, the player with its cooldowns, enemies, projectiles, spawns and config;
   - `getMap()`, `getMatchState` and `waitForState` (event-driven, no polling);
   - `setScenario`, `resetServer`, `getRequestLog` and `clearLocal`.
@@ -609,7 +610,7 @@ Sitting still is now punished, and sailing is the defence. One consequence: an i
 - Changing the default `GameConfig` between deploys has a side effect: a record still waiting in an older outbox fails the server's `custom` check with 422, because it was saved as non-custom under the previous defaults.
 - Only Chromium is tested: desktop, and an emulated Pixel 7 in landscape. Safari/iOS and Firefox are not covered. `resolution` is capped at 2, even on DPR 3 phones, to protect the frame rate.
 - Hosting is self-hosted: Docker and nginx behind Caddy on a subdomain, over HTTPS, rather than the Vercel, Netlify or Cloudflare Pages named in the challenge. The spec's fallback for an unreachable host, a static mirror of the same `dist/` on Cloudflare Pages, was not set up; the container restarts on its own (`restart: unless-stopped`, health check).
-- The repository had no public remote when this was written, so the CI workflow has never run on a hosted runner. The local run of the same Linux Playwright image (`npm run test:e2e:docker`) stands in for it.
+- CI runs on GitHub Actions in the Linux Playwright image. Hosted runners have no GPU, so Chromium renders with software WebGL and every drawn frame is slow: the stepwise simulation specs (TEST-03/04/05) take up to about 2 minutes there, against seconds locally. The test timeout is therefore 180 s under `CI=1` and 60 s otherwise. The first hosted run exposed this: the TEST-03 edge and island specs drew one frame per tick and timed out, which is why `trace(ticks)` now draws once per call.
 - The test hooks ship in every build, behind `?test=1`. They can read state and drive the clock, but they cannot change combat.
 
 ## Appendix: requirement ID → section index

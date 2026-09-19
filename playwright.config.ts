@@ -10,7 +10,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: process.env.CI ? 2 : 4,
-  timeout: 60_000,
+  timeout: process.env.CI ? 180_000 : 60_000,
   expect: {
     timeout: 10_000,
     toHaveScreenshot: { maxDiffPixelRatio: 0.005, animations: 'disabled', caret: 'hide' },

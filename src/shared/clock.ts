@@ -37,13 +37,14 @@ export class ManualClock implements Clock {
     }
   }
 
-  advance(ms: number): void {
+  advance(ms: number, afterFrame?: () => void): void {
     const end = this.time + ms
     while (this.nextFrameAt <= end + 1e-6) {
       this.time = this.nextFrameAt
       this.nextFrameAt += frameMs
       const last = this.nextFrameAt > end + 1e-6
       this.callbacks.forEach((callback) => callback(this.time, last))
+      afterFrame?.()
     }
     this.time = end
   }

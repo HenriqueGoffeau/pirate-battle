@@ -126,6 +126,12 @@ function waitForState(state: TestSnapshot['state'], timeoutMs = 15_000): Promise
   })
 }
 
+function currentSnapshot(): TestSnapshot | null {
+  const session = testControl.current()
+  const world = session?.world()
+  return session && world ? freeze(snapshotOf(session, world)) : null
+}
+
 const localPrefix = 'pb:v1:'
 const keptKeys = new Set(['pb:v1:scenario'])
 
@@ -136,11 +142,15 @@ export function installTestApi(): void {
     useManualClock: () => testControl.useManualClock(),
     advance: (ms) => manualClock().advance(ms),
     step: (ticks) => manualClock().advance(ticks * frameMs),
-    getSnapshot() {
-      const session = testControl.current()
-      const world = session?.world()
-      return session && world ? freeze(snapshotOf(session, world)) : null
+    trace(ticks) {
+      const frames: TestSnapshot[] = []
+      manualClock().advance(ticks * frameMs, () => {
+        const frame = currentSnapshot()
+        if (frame) frames.push(frame)
+      })
+      return frames
     },
+    getSnapshot: currentSnapshot,
     getMap() {
       const world = testControl.current()?.world()
       return world ? freeze(mapOf(world)) : null

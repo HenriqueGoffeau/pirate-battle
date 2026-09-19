@@ -9,15 +9,7 @@ const { edgeBand, edgePush } = GameConfig.arena
 const quiet = { sessionSeconds: 120, spawnIntervalSec: 10 }
 
 const trace = (page: Page, steps: number): Promise<TestSnapshot[]> =>
-  page.evaluate((count) => {
-    const api = window.__PB_TEST__!
-    const frames: TestSnapshot[] = []
-    for (let index = 0; index < count; index++) {
-      api.step(1)
-      frames.push(api.getSnapshot()!)
-    }
-    return frames
-  }, steps)
+  page.evaluate((count) => window.__PB_TEST__!.trace(count), steps)
 
 const wrapAngle = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle))
 

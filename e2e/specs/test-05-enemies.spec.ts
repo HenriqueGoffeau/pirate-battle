@@ -13,15 +13,7 @@ const look = (page: Page, steps: number): Promise<TestSnapshot> =>
   }, steps)
 
 const trace = (page: Page, steps: number): Promise<TestSnapshot[]> =>
-  page.evaluate((count) => {
-    const api = window.__PB_TEST__!
-    const frames: TestSnapshot[] = []
-    for (let index = 0; index < count; index++) {
-      api.step(1)
-      frames.push(api.getSnapshot()!)
-    }
-    return frames
-  }, steps)
+  page.evaluate((count) => window.__PB_TEST__!.trace(count), steps)
 
 const distanceTo = (frame: TestSnapshot, ship: TestShip) => Math.hypot(ship.x - frame.player.x, ship.y - frame.player.y)
 

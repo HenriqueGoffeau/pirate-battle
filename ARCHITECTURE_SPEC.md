@@ -761,6 +761,10 @@ As built (M7): the time-up specs (visual result, TEST-06 time-up, TEST-08, TEST-
 kill" holds the bow gun with seed 50 (scores 3 before sinking). The UI font is Nunito, self-hosted (§19), so both baseline sets
 render the same typeface; the menu baseline masks the "Build <sha>" footer. `PB_BASE_URL=https://… npm run test:e2e` runs the
 suite against a deployed URL (no local web server).
+As built (after M7, first GitHub Actions run): hosted runners render with software WebGL, and the TEST-03 edge and island specs,
+which snapshotted every tick with `step(1)` (one drawn frame per tick, ≈ 600 per test), timed out at 60 s. `trace(ticks)` now
+snapshots after every tick of a single `advance` and draws once; the CI timeout is 180 s (60 s locally). Checked in the Linux
+image capped at 1 CPU: the slowest spec takes 108 s.
 
 38 tests; 48 runs across the two projects (the touch test is skipped on desktop). TEST-13 = the two projects, TEST-15 = seed +
 manual clock, TEST-16 = the API above, TEST-17 = a fresh context per test plus `reset=1`, TEST-18 = HTML report + traces.
