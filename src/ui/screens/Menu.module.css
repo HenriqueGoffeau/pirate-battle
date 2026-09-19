@@ -189,3 +189,25 @@
     font-size: 11px;
   }
 }
+
+.history {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border: 2px solid #1f2a38;
+  border-radius: 999px;
+  background: #e0b95a;
+  color: #1f2a38;
+  font: 800 12px / 1 system-ui, sans-serif;
+  letter-spacing: 0;
+}

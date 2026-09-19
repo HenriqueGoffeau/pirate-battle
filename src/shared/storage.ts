@@ -15,3 +15,12 @@ export function writeStored(key: string, data: unknown): boolean {
     return false
   }
 }
+
+export function removeStored(key: string): boolean {
+  try {
+    localStorage.removeItem(key)
+    return true
+  } catch {
+    return false
+  }
+}

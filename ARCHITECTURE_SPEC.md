@@ -19,7 +19,7 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 | Spawn points | **Entry points on the arena border**, authored in map data. Enemies are created just outside the rim, hidden, and **sail in through the fog** in an `arriving` state (straight in, can't fire, can't be hit or ram) until the whole hull is inside. Every entry allows both kinds; the type is a seeded weighted pick. Runtime filter = entry distance to the player's **current** position ≥ `minPlayerDist[kind]` (Chaser 448, Shooter 320: the rammer gets a longer runway, EN-06) and no ship (player included) within `occupancyRadius` of the arrival point. No entry is locked to a kind by position |
 | Options screen | Exactly two settings: session seconds (60–180, step 10, default 120), spawn interval (1–10 s, step 1, default 3). Steppers + explicit Save. As built (M4): the value between the −/+ round buttons is a typed field (`inputMode=numeric`), so validation is real: `validateOptions` (config, Vitest) reports out of range, off-step (75 → "Use steps of 10 seconds."), fractional and non-numbers; the error shows on blur or Save (`role=alert`, `aria-invalid`, `aria-describedby` = limits + error), −/+ snap to the step and disable at the limits, visible limits text under each field. Save writes `pb:v1:options` and says "Saved. Applies to your next battle."; invalid drafts are not saved; stored data that fails validation falls back to the defaults |
 | configKey | `s{sessionSeconds}-i{spawnIntervalSec}` (e.g. `s120-i3`). Records made with a non-default balance carry `custom: true` and are excluded from ranking |
-| Dev panel | Behind `?dev=1` (persisted `pb:v1:dev` from M5; M1 reads the query only). Network tab: scenario select, reset server, clear outbox, flags. Balance tab: JSON textarea editing `GameConfig`, Apply → next match, Reset. On `/play`, `?dev=1` also draws the **map overlay** (§6) |
+| Dev panel | Behind `?dev=1` (persisted `pb:v1:dev` from M5; M1 reads the query only). Network tab: scenario select, reset server, clear outbox, flags. Balance tab: JSON textarea editing `GameConfig`, Apply → next match, Reset. On `/play`, `?dev=1` also draws the **map overlay** (§6). As built (M5): `?dev=1` turns dev mode on and `?dev=0` off (stored); a "Dev tools" pill (top-left of every menu screen) opens a `<dialog>` with two tabs. **Network:** scenario select with its description, Reset server, Clear outbox, outbox counts (waiting / failed) and the last 8 requests (method, path, status, ms) from the mock request log; changing the scenario or resetting invalidates every query. **Balance:** the `GameConfig` JSON (or the stored custom one); Apply validates JSON and shape (`config/balance.ts`: same keys and types as `GameConfig`, finite numbers; the error names the path, e.g. `arena.mapId must be text.`) and stores `pb:v1:devBalance`; a balance equal to the default is simply cleared; Reset clears it. The custom balance applies only while dev mode is on; "Exit dev mode" turns it off. The panel reaches the mocks through a context injected by `app/providers.tsx` (`ui/dev/devControls.ts` declares the interface), so `ui` never imports `mocks`. The map overlay stays tied to the `?dev=1` query on `/play` |
 | Player identity | Generated UUID `playerId` + editable name, default "Captain Jack", stored `pb:v1:player`, sent as `X-Player-Id`. The name is edited **on the Main Menu** ("Captain Anne Bonny" + pencil round button → inline field, Save/Cancel, Enter/Esc), because a first-time player will not open Match History and Options must stay at two settings (CFG-03). 2–20 characters after trimming and collapsing spaces; letters, numbers, spaces, `'`, `.`, `-`. The pack has no pencil icon, so the pencil is a small inline SVG in the pack's round button |
 | Ranking rows | One row per match; all rows of the local player get the YOU badge; default view = current options |
 | Tie-break | score DESC → effectiveSec ASC → playedAt ASC → matchId ASC |
@@ -33,9 +33,9 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 | Pause → Options | Does not exist. Pause dialog = Resume / Main Menu |
 | Match end | The sim stops at once (MR-04); the frozen arena shows a banner for 1.2 s ("Time's up!" or "Your ship was sunk!"), then the **Result dialog opens over the frozen match**, like Pause (not a separate page: a page of its own is only worth it if it showed the history). Surviving until time runs out is a win: Result headline "You survived the attack" (caption `TIME'S UP` in green); defeat: "Your ship was sunk" (`DEFEATED` in #F08A7A) |
 | Mobile | Landscape only; portrait shows a rotate overlay and auto-pauses. On wide phones the arena leaves fog zones left and right; the touch buttons (M4) sit there, so thumbs never cover the playable water. As built: two clusters in the bottom corners like `sample.png` (steering: forward raised between turn-left/turn-right; cannons: bow raised between left/right broadside), 64 px sprites, shown only on `(pointer: coarse)`; on 915×412 they sit in the fog zone with a few px over the arena's fog band; on 640×360 (no fog zone) they cover the arena's bottom corners, which are fog/edge water. The rotate overlay is shown only in the game (menus work in portrait) and replaces the Pause dialog while portrait (a modal dialog would sit above any overlay in the top layer); rotating back shows the dialog |
-| Routing | Real URLs `/`, `/options`, `/play`, `/result`, `/log`. Reload on `/play` → menu (match abandoned, never recorded, CFG-06). A match starts only from an in-app navigation: any POP onto `/play` (reload, typed URL, Back/Forward) redirects to the menu, except with `?dev=1` so the map-editing reload loop keeps working. Game → Result, Pause → Main Menu and both Result buttons replace the history entry, so Back never lands on a finished match. `/play` and `/result` are children of one pathless layout route (`GameRoute`), so the frozen match stays mounted when the URL changes to `/result`. Reload on `/result` → the same Result dialog over a **snapshot of the battle's final frame** (the match itself is gone, CFG-06), from the router history state in M3 and local storage from M5; a fresh tab (no history entry) gets a plain sea gradient |
+| Routing | Real URLs `/`, `/options`, `/play`, `/result`, `/log`. Reload on `/play` → menu (match abandoned, never recorded, CFG-06). A match starts only from an in-app navigation: any POP onto `/play` (reload, typed URL, Back/Forward) redirects to the menu, except with `?dev=1` so the map-editing reload loop keeps working. Game → Result, Pause → Main Menu and both Result buttons replace the history entry, so Back never lands on a finished match. `/play` and `/result` are children of one pathless layout route (`GameRoute`), so the frozen match stays mounted when the URL changes to `/result`. Reload on `/result` → the same Result dialog over a **snapshot of the battle's final frame** (the match itself is gone, CFG-06), from the router history state (as built M5: the `MatchRecord` travels in the history state and `pb:v1:lastResult` backs it up); a fresh tab (no history entry) shows the last result from local storage over a plain sea gradient, or "No battle yet" |
 | Audio | Out of scope |
-| Pending display | Result screen status row + menu badge. History shows confirmed rows only |
+| Pending display | Result screen status row + menu badge. History shows confirmed rows only. As built: the badge is a gold count on the Match History button (with visually hidden ", N battles waiting to be saved"); it counts pending and in-flight items, not permanently failed ones |
 | Dates | `08 SEP · 21:42`, local time, en-GB month abbreviations |
 | Page size | 5; history newest first |
 | Bindings | W/↑ forward · A/D or ←/→ turn · Space fire front · Q/E broadside left/right · P/Esc pause. `event.code` based. No remapping |
@@ -76,8 +76,10 @@ UI never calls the sim; it calls `handle.pause()/resume()`.
 
 ```
 src/
-  app/        main.tsx (startMsw → flushOutbox → render), router.tsx, providers.tsx
-  config/     gameConfig.ts, userOptions.ts (limits, validate), matchConfig.ts (snapshot, configKey, custom)
+  app/        main.tsx (dev flag → startMsw → setOffline → startOutbox → render), startMsw.ts, router.tsx, providers.tsx
+              (QueryClientProvider + dev controls context)
+  config/     gameConfig.ts, userOptions.ts (limits, validate), matchConfig.ts (snapshot, configKey, custom, isCustomBalance),
+              balance.ts (validateBalance for the dev panel's JSON)
   shared/     clock.ts (Clock, RealClock, ManualClock), rng.ts (mulberry32), storage.ts (read/write JSON, safe fallback), uuid.ts
               (randomUUID, getRandomValues fallback for plain-HTTP LAN testing), math.ts, bindings.ts (moved from input at M4:
               the menu builds its controls table from it and ui may not import input),
@@ -91,11 +93,13 @@ src/
   shared/     … + intent.ts (ShipIntent, shared by input and sim)
   assets/     manifest.ts, loader.ts (ensureLoaded), parseTiledMap.ts (pure JSON → MapData, used by Vitest), tiledMap.ts (MapSource impl)
   session/    GameSession.ts, loop.ts, lifecycle.ts, store.ts, perfProbe.ts
-  data/       contracts/, http.ts, api.ts, queries.ts, outbox.ts, local.ts
-  mocks/      handlers.ts, fixtures.ts, scenarios.ts, fakeDb.ts, browser.ts
+  data/       contracts/ (types.ts, ranking.ts comparator + test, record.ts parse + server-side checks), http.ts (Axios,
+              ApiError, offline flag), api.ts, queries.ts (QueryClient, keys, useRanking/useHistory, save mutation options),
+              outboxReducer.ts (+ test), outbox.ts (store, flusher, lastResult, useOutbox), local.ts
+  mocks/      handlers.ts, fixtures.ts, scenarios.ts, fakeDb.ts, requestLog.ts, browser.ts
   testing/    testApi.ts
   ui/         screens/ (Menu, Options, CaptainsLog), game/ (GameRoute = /play + /result layout, GameHost, Hud, TouchControls,
-              PauseDialog, ResultDialog), components/ (WoodPanel, GoldButton, RoundButton, GameDialog, Tabs), a11y/ (LiveRegion), dev/ (DevPanel),
+              PauseDialog, ResultDialog), components/ (WoodPanel, GoldButton, RoundButton, GameDialog, Tabs), a11y/ (LiveRegion), dev/ (DevPanel, devControls),
               sprites/ (UI PNGs copied by convert-assets, name.png + name@2x.png, used from CSS modules)
 public/       mockServiceWorker.js, assets/ (ships, tiles, tiles@2x, ui_sheet, ui_sheet_retina: JSON + PNG), maps/archipelago-1.json
 scripts/      convert-assets.ts (Sparrow XML → Pixi JSON; tile grid → JSON 1×/2×; UI sheet copied), build-map.ts +
@@ -114,7 +118,7 @@ unhashed files copied from `public/assets/` (`/assets/*`, revalidated).
 
 - The `/play` and `/result` routes share the layout `ui/game/GameRoute`, which loads `GameHost` with `React.lazy` inside `Suspense` (fallback: the same
   "Loading the fleet…" status). Everything that imports `pixi.js` sits behind that boundary, so the menu, Options and Captain's
-  Log never download Pixi (build: `index` ≈ 315 kB with React + router, `GameHost` ≈ 256 kB with Pixi + session; no chunk-size
+  Log never download Pixi (build at M5: `index` ≈ 441 kB with React, router, TanStack Query, Axios and the data layer; `GameHost` ≈ 300 kB with Pixi + session; the MSW chunk `browser` ≈ 431 kB; no chunk-size
   warning). Nothing outside `ui/game/GameHost` and below may import `session`, `render` or `assets` statically.
 - `GameHost` (React) creates a `GameSession` in `useEffect([matchConfig])`, calls `start()`, returns `() => dispose()`.
   `matchConfig` must be a stable snapshot object created on navigation to `/play`; Play Again creates a new one.
@@ -425,6 +429,11 @@ States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused →
   under the dialog's dimmed backdrop. It stays in the history entry only (not in local storage, even from M5), so a new tab on
   `/result` falls back to the sea gradient. Until M5 the result travels in the router's history state (survives a
   reload of `/result`; a fresh tab shows "No battle yet"); M5 writes `pb:v1:lastResult` + the outbox item first (§14).
+  As built (M5): `GameHost` takes the result as soon as `ended` is published and calls `recordFinishedMatch` (builds the
+  `MatchRecord` with a new UUID, the player's id and name, `playedAt` now and the frozen `MatchConfig`), which writes the
+  outbox item and `lastResult` synchronously and starts the flush, so the match counts as finished even if the page reloads
+  during the 1.2 s banner. The navigation state is `{ record, endFrame }`; `GameRoute` accepts a record only if
+  `parseMatchRecord` does, else falls back to `lastResult`.
 - Main Menu / route change / reload during any state → dispose, nothing recorded (CFG-06). A POP onto `/play` redirects to `/`.
 - Play Again → new `MatchConfig` snapshot + new seed → new session (a new `GameHost` mount with a fresh store).
 - Verified at M3 (headless Chromium, dev Strict Mode): window `keydown`/`keyup`/`blur` and document `visibilitychange` listeners
@@ -526,6 +535,20 @@ retryable = network | timeout | 5xx | 429.
 Comparator (shared by handler and tests): score DESC → effectiveSec ASC → playedAt ASC → matchId ASC.
 Handler recomputes `configKey` from `config` and rejects mismatch with 422.
 
+As built (M5):
+- `data/contracts/types.ts` holds the shapes above plus `ApiErrorBody { code, message }` (what the mock server sends) and
+  `SaveOutcome { record, created }`; page size 5. `EndReason` is redeclared here because `data` may not import `sim`.
+- `data/http.ts`: one Axios instance (`baseURL /api`, timeout 8 s). The request interceptor adds `X-Player-Id` and, in offline
+  mode, rejects at once with a non-retryable network error; the response interceptor turns every failure into an `ApiError`
+  (timeout → `timeout`, no response → `network`, 404/409/422 → `not_found`/`conflict`/`validation`, else `server`; the message
+  comes from the server body when present). `data/api.ts` checks the response shape (a page needs `items`, `page`,
+  `totalPages`; a PUT answer must parse as a record), so an HTML fallback page never reaches the UI.
+- PUT is idempotent by `matchId`: a new record → 201; the same record again → 200 with the stored one; the same `matchId`
+  with a different body → **409** (added so a retry can never overwrite a stored record); invalid body, path/body `matchId`
+  mismatch, `configKey` not matching the config, `custom` not matching the balance in the config (recomputed with
+  `isCustomBalance`), or `effectiveSec` longer than the session → 422 with a message. The checks live in
+  `data/contracts/record.ts` (`parseMatchRecord`, `recordProblem`) and are shared by the client and the mock server.
+
 ## 14. Queries and outbox (API-06..14)
 
 ```ts
@@ -544,6 +567,40 @@ In-memory in-flight flag per item (no cross-tab lease). 200 and 201 both confirm
 Result status row: saving… / saved / pending (retry in N s + Retry) / failed (message). Menu badge = pending count.
 Stale responses: AbortSignal + per-page query keys are the only guard (Session 5, option a).
 
+As built (M5):
+- The outbox runs the save through a TanStack `MutationObserver` built from `saveMatchOptions` (the options a `useSaveMatch`
+  hook would take: `mutationFn` = `putMatch(record, signal)`, retry 0, `onSuccess` invalidates `['ranking']` and `['history']`),
+  because it must run outside React: at boot, on `online`, on its backoff timer and on Retry.
+- `data/outboxReducer.ts` is the pure state machine (Vitest): `enqueue` (once per matchId) → `pending`; `submit` →
+  `submitting`; `confirm` removes the item (that is the confirmed state); `fail` with a retryable error → `pending` with
+  `attempts + 1` and `retryAt = now + 2·2^(attempts−1) s` capped at 30 s; a non-retryable error (422, 409) → `failed`, kept,
+  never retried on its own; `retry` clears the backoff. On load, `submitting` items become `pending` (a reload aborted them).
+- `data/outbox.ts` keeps `{ items, lastResult }` in memory, writes both keys on every change and exposes `useOutbox()`
+  (`useSyncExternalStore`). The flusher submits due items one at a time, oldest first, with an `AbortController` per item
+  (Clear outbox aborts them); that map is also the in-flight guard; after each pass it arms one timer for the earliest
+  `retryAt`. It does nothing in offline mode. `lastResult.status` follows its item: `saved` on confirm, `failed` with the
+  message on a permanent failure, `failed` ("Removed from the outbox.") when the dev panel clears it.
+- Result status row (`saveStatusOf`): **Saving to the captain's log…** while in flight or not yet tried; **Not saved yet · retry
+  in N s** + "Retry now" after a retryable failure (the countdown is `aria-hidden`, only the state text is in the
+  `role=status`); **Not saved yet · kept on this device (offline mode)** without Retry when the mocks are down; **Saved to the
+  captain's log**; **Couldn't save: message** for a permanent failure. Play Again keeps the initial focus (`data-autofocus`,
+  honoured by `GameDialog`). A record played with a custom balance adds "Custom balance · not ranked".
+- Log: `ui/screens/logView.ts` maps the query onto `LogView`; an error is hidden while a fetch runs, so Retry and the automatic
+  retries show "Loading…"/"Refreshing…" instead of the old error, and the page shown during a placeholder is the requested one.
+  Each tab is its own component, so switching tabs remounts its query and `refetchOnMount: 'always'` refreshes it (API-08).
+  Ranking: rank `01`…, ★ on rank 1, gold points, a YOU pill on every row of the local player (`aria-current`), `08 SEP · 21:42`
+  dates in local time from a fixed month list (en-GB `short` gives "Sept"). History: date, points, mm:ss duration, TIME'S UP
+  (green) / DEFEATED (red), a CUSTOM pill for custom-balance records, the newest row (page 1) highlighted. Cells are
+  left-aligned under their headers. On screens ≤ 500 px tall the Log switches to two columns (title, stacked tabs and Main Menu
+  on the left, table on the right), so 5 rows fit at 640×360 and 915×412.
+- Verified headless (dev and `vite preview`, 118 checks): a finished match appears in both tabs (you at 03 with 24 points, as
+  in the mockup); `timeoutAfterSave` → PUT 201 hangs 12 s, the client gives up at 8 s, the automatic retry 2 s later gets 200,
+  one record; "Retry now" saves in ≈ 0.7 s; `downThenRecover` → 503, 503, 201; the badge survives a reload and clears when the
+  boot flush succeeds; 422 → failed, not counted in the badge; two quick invalidations where the older request answers last
+  keep the newer data (API-09); `rankingFails` → 1 try + 2 retries (≈ 3.5 s), then the error with Retry, History unaffected;
+  offline mode (worker script blocked) → banner, instant tab errors, the match still plays and waits on the device, saved
+  after the next boot with mocks.
+
 Panel states: pending (5 skeleton rows), fetching with data ("REFRESHING…" caption), placeholder (dimmed, pagination disabled),
 empty ("No battles logged yet for this configuration." + Play), error without data (message + Retry, role=alert),
 error with data (rows stay, "COULDN'T REFRESH · RETRY").
@@ -555,6 +612,10 @@ in the URL (`/log?tab=ranking|history`, switched with replace), arrow keys/Home/
 
 `pb:v1:options` · `pb:v1:player` · `pb:v1:lastResult` · `pb:v1:outbox` · `pb:v1:mockDb` (fake server, capped 500 records) ·
 `pb:v1:scenario` · `pb:v1:dev` · `pb:v1:devBalance`. Outbox and mockDb are separate on purpose.
+As built (M5): `pb:v1:outbox` = array of `{ record, state, attempts, retryAt, error }`; `pb:v1:lastResult` =
+`{ record, status: pending|saved|failed, error }`; `pb:v1:mockDb` = `{ dataset, records }` (the newest 500 are kept);
+`pb:v1:scenario` = scenario id; `pb:v1:dev` = `true` or absent; `pb:v1:devBalance` = a `BalanceConfig`. Every record read back
+goes through `parseMatchRecord`; invalid entries are dropped, not the whole key.
 As built (M4, `shared/storage.ts` + `data/local.ts`): the version lives in the key; values are plain JSON; every read goes
 through a parser (options → `validateOptions`, player → UUID v4 + name rules) and any exception, missing key or invalid value
 returns the fallback (defaults / a newly generated player, written back once). Writes are wrapped too and report failure
@@ -572,6 +633,28 @@ timeoutAfterSave (PUT commits to fakeDb, then hangs 12 s) · downThenRecover (PU
 
 Selection: `?scenario=id` (persisted), `?reset=1`, dev panel, `__PB_TEST__.setScenario`. Reset restores fixtures and zeroes
 the per-scenario request counter. Fixtures: 24 seeded captains, scores 8–41, across 2 configKeys; local player never in fixtures.
+
+As built (M5):
+- Handlers (`mocks/handlers.ts`) run every request through one `serve()`: log it, ask the active scenario for a plan
+  (`latencyMs` default 150, `failure` = network | timeout | status, `hangAfterCreate`), wait, fail or answer, log the result.
+  A timeout waits 12 s and answers 504 without touching the database. Network errors are `HttpResponse.error()`.
+- Scenarios (`mocks/scenarios.ts`): success · empty · manyPages · slow 2.5 s · jitter (seeded 100–2000 ms, same sequence after
+  every reset) · outOfOrder (odd requests 3 s, even 300 ms) · timeout · networkError · http4xx (422) · http5xx (503) ·
+  rankingFails (ranking and configs 503) · historyFails · timeoutAfterSave (only the PUT that **creates** a record hangs 12 s
+  after storing it; the retry finds it and answers 200 at once) · downThenRecover (PUT 503 until the 3rd attempt since the
+  scenario was selected or reset; GETs work). The counter is per page load.
+- Datasets: `empty` starts with no records; `manyPages` adds seven battles of the local player (3 on `s120-i3`, 4 on `s180-i2`,
+  generated at reset with the current player id and name) so History has 2 pages and Ranking 3; every other scenario uses the
+  fixtures. Selecting a scenario whose dataset differs from the stored one resets the database (so `?scenario=empty` alone
+  shows empty lists); otherwise switching keeps the records. `?reset=1` always resets (records + counters + request log).
+- Fixtures (`mocks/fixtures.ts`): hand-written, deterministic ids and dates (29 Aug – 8 Sep 2026). `s120-i3`: 12 captains,
+  Captain Flint 38, Red Sparrow 32, Storm Rider 21, Sea Wolf 19 … so a local 24 lands at 03 exactly like the mockup, with a
+  duration tie (Iron Kate 15 in 88 s above Black Bart 15 in 120 s) and a date tie (Tide Runner above Gull Eye, both 12 in
+  120 s). `s180-i2`: 12 captains, Calico Jack 41 … Captain Vane 8.
+- `mocks/requestLog.ts` keeps the last 30 requests for the dev panel (and later `getRequestLog` in the test API).
+- `app/startMsw.ts` applies `?scenario`/`?reset` before `worker.start`; on failure it sets `body[data-msw-offline]`, the data
+  layer goes offline (§14) and every menu screen shows "Offline mode: ranking and history are unavailable. Battles still work
+  and wait on this device."
 Production: `worker.start({ onUnhandledRequest: 'bypass' })` awaited before first render, wrapped in try/catch → "offline mode" banner
 on failure; `public/mockServiceWorker.js`. Hosting (nginx): extensionless paths `try_files $uri /index.html`; any path with a
 file extension is `try_files $uri =404`, so a missing asset is a real 404 and never an HTML page; `/static/*` gets
@@ -596,7 +679,7 @@ stretch adds 08, 10). One spec file per TEST-ID, 1–3 tests each (~22 total). F
 `/?test=1&scenario=X&reset=1`, waits for `body[data-msw-ready]`, fails on console errors. `?test=1` also disables ambient
 animation and the render RNG. Visual baselines: menu, arena after `advance(5000)` seed 42 no input, result after timeUp;
 `maxDiffPixelRatio 0.005`; generated in the Playwright Docker image. `page.clock` for wall-clock waits (outbox backoff) in data specs only.
-Reporter html + list, `trace: 'retain-on-failure'`. Vitest (6 suites, no others): comparator (M5), validateOptions (M4), outbox reducer (M5), segment-circle (M2, `shared/math.test.ts`),
+Reporter html + list, `trace: 'retain-on-failure'`. Vitest (6 suites, no others): comparator (M5, `data/contracts/ranking.test.ts`), validateOptions (M4), outbox reducer (M5, `data/outboxReducer.test.ts`), segment-circle (M2, `shared/math.test.ts`),
 spawn entries (M1, `assets/parseTiledMap.test.ts`), **determinism** (M2, `session/determinism.test.ts`: same seed + scripted input
 through `startLoop` + `ManualClock` gives an identical world for 1000 ms and 7 ms advances, and differs for another seed; added
 because it caught a ManualClock bug, and verified to fail against the old code).
@@ -606,7 +689,7 @@ inlined here in M6.
 
 ## 18. Performance (PERF-01..04)
 
-Loading: route-level code split (§3) keeps Pixi out of the first download; MSW's worker bundle (≈ 407 kB) loads in parallel
+Loading: route-level code split (§3) keeps Pixi out of the first download; MSW's worker bundle (≈ 431 kB at M5, fixtures included) loads in parallel
 before first render because the mocks must be up before any query (§16). Report both in REPORT.md.
 
 `session/perfProbe.ts` enabled by `?perf=1`: per-frame dt ring buffer; per-second samples {fps, p95, ships, shots, fx, heapMB};
@@ -642,7 +725,7 @@ Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A
 | M3 | 2 | Lifecycle, pause/auto-pause/resume, store + HUD, Pause dialog, minimal Result, abandon on route change (loop, RealClock, ManualClock and keyboard input with clear-on-blur already landed in M2). As built it also pulled the UI sprites and the `WoodPanel` / `GoldButton` / `RoundButton` primitives forward from M4, because the HUD, Pause dialog and Result use the pack's art | HUD updates on change only; blur pauses; held keys don't leak; Play Again resets |
 | CP1 | h14 | Day-1 buffer: 0.5 h left after M2's planned 1.5 h → M2 overrun first; stretch #1–2 move to day 2's buffer. If M2 runs long, cut in this order: fog gradient → plain darker band; arrival → fade-in at the entry; acceleration and slide stay. Public deploy: homelab clone, `docker compose up -d --build`, Caddy site `reverse_proxy` to the container on the subdomain | M0–M3 deployed over HTTPS on the subdomain: `mockServiceWorker.js` 200 as JavaScript with `no-cache`; `/result` loads directly and on reload; `document.body.dataset.mswReady === "true"`; footer SHA = `git rev-parse --short HEAD` |
 | M4 | 3.5 | Remaining primitives (Tabs, steppers), Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus. As built: player name editing on the Menu (moved here from M5); the Result save-status row moved to M5 (it needs the outbox); the Log renders its empty state until M5 feeds it | All screens usable by keyboard and touch; no clipping at 640×360 |
-| M5 | 3 | Contracts, Axios, queries, outbox, storage codec (options/player part landed in M4), Result save-status row (moved from M4), handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
+| M5 | 3 | Contracts, Axios, queries, outbox, storage codec (options/player part landed in M4), Result save-status row (moved from M4), handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag. As built also: offline banner, the menu pending badge, 409 on a changed body, server-side custom check, a two-column Log on short screens | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
 | CP2 | h20.5 | If behind: M6 keeps 3.5 h, M7 shrinks to 1.5 h | Manual pass of every TEST-ID on the deployed build |
 | M6 | 3.5 | Test API, pbPage fixture, 12 spec files (order 01,03,04,06,07 → 02,05,08,09 → 10,11,12), 6 baselines, report + traces committed | `test:e2e` green twice locally, once in CI |
 | M7 | 2 | Perf run, memory check, REPORT.md, README, ARCHITECTURE.md (outline §21), licenses, tagged deploy | Clean clone runs dev/build/preview/lint/typecheck/test:e2e; deployed SHA = tag |

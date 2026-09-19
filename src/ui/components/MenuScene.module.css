@@ -42,6 +42,44 @@
   letter-spacing: 0.04em;
 }
 
+.devButton {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  left: max(8px, env(safe-area-inset-left, 0px));
+  z-index: 2;
+  padding: 5px 10px;
+  border: 1px solid rgb(224 185 90 / 70%);
+  border-radius: 999px;
+  background: rgb(16 28 40 / 75%);
+  color: #e0b95a;
+  font: 700 11px / 1 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.devButton:focus-visible {
+  outline: 3px solid #f3e9d2;
+  outline-offset: 3px;
+}
+
+.offline {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgb(16 28 40 / 85%);
+  color: #f08a7a;
+  font: 700 12px / 1.3 system-ui, sans-serif;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
 .logo {
   width: 120px;
   height: auto;

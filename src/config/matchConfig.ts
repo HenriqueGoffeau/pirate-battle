@@ -6,6 +6,12 @@ export type MatchConfig = BalanceConfig & UserOptions & { configKey: string; cus
 
 export const configKey = (options: UserOptions) => `s${options.sessionSeconds}-i${options.spawnIntervalSec}`
 
+export function isCustomBalance(config: object): boolean {
+  const source = config as Record<string, unknown>
+  const balance = Object.fromEntries(Object.keys(GameConfig).map((key) => [key, source[key]]))
+  return !deepEqual(balance, GameConfig)
+}
+
 export function createMatchConfig(options: UserOptions, seed: number, balance: BalanceConfig = GameConfig): MatchConfig {
   return deepFreeze({
     ...structuredClone(balance),

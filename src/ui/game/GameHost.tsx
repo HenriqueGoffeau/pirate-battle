@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { createMatchConfig } from '../../config/matchConfig'
-import { loadOptions } from '../../data/local'
+import type { MatchRecord } from '../../data/contracts/types'
+import { loadMatchBalance, loadOptions } from '../../data/local'
+import { recordFinishedMatch } from '../../data/outbox'
 import { GameSession } from '../../session/GameSession'
 import { portraitQuery } from '../../session/lifecycle'
-import { createSessionStore, type MatchResult, type MatchState } from '../../session/store'
+import { createSessionStore, type MatchState } from '../../session/store'
 import { LiveRegion } from '../a11y/LiveRegion'
 import { useMatchAnnouncer } from '../a11y/useMatchAnnouncer'
 import { useMediaQuery } from '../components/useMediaQuery'
@@ -24,11 +26,11 @@ type GameHostProps = { showingResult: boolean }
 export function GameHost({ showingResult }: GameHostProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null)
   const sessionRef = useRef<GameSession | null>(null)
-  const resultRef = useRef<MatchResult | null>(null)
+  const recordRef = useRef<MatchRecord | null>(null)
   const hudRef = useRef<HudHandle>(null)
   const touchRef = useRef<TouchControlsHandle>(null)
   const [store] = useState(createSessionStore)
-  const [matchConfig] = useState(() => createMatchConfig(loadOptions(), newSeed()))
+  const [matchConfig] = useState(() => createMatchConfig(loadOptions(), newSeed(), loadMatchBalance()))
   const hud = useSyncExternalStore(store.subscribe, store.getSnapshot)
   const portrait = useMediaQuery(portraitQuery)
   const [searchParams] = useSearchParams()
@@ -57,12 +59,15 @@ export function GameHost({ showingResult }: GameHostProps) {
 
   useEffect(() => {
     if (matchState !== 'ended') return
-    resultRef.current ??= sessionRef.current?.getResult() ?? null
-    const result = resultRef.current
-    if (!result) return
+    if (!recordRef.current) {
+      const result = sessionRef.current?.getResult()
+      if (result) recordRef.current = recordFinishedMatch(result)
+    }
+    const record = recordRef.current
+    if (!record) return
     const timer = window.setTimeout(() => {
       const endFrame = sessionRef.current?.getEndFrame() ?? null
-      void navigate('/result', { replace: true, state: { result, endFrame } })
+      void navigate('/result', { replace: true, state: { record, endFrame } })
     }, endHoldMs)
     return () => window.clearTimeout(timer)
   }, [matchState, navigate])

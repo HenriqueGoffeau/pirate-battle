@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { useNavigate } from 'react-router'
+import { pendingCount, useOutbox } from '../../data/outbox'
 import { actionLabels, keyLabel, keysFor, type Action } from '../../shared/bindings'
 import { GoldButton } from '../components/GoldButton'
 import { MenuScene } from '../components/MenuScene'
@@ -14,6 +15,7 @@ export function Menu() {
   const navigate = useNavigate()
   const headingRef = useHeadingFocus<HTMLHeadingElement>()
   const controlsId = useId()
+  const waiting = pendingCount(useOutbox())
 
   return (
     <MenuScene>
@@ -34,8 +36,20 @@ export function Menu() {
             <GoldButton variant="secondary" onClick={() => void navigate('/log?tab=ranking')}>
               Ranking
             </GoldButton>
-            <GoldButton variant="secondary" onClick={() => void navigate('/log?tab=history')}>
+            <GoldButton
+              variant="secondary"
+              className={styles.history}
+              onClick={() => void navigate('/log?tab=history')}
+            >
               Match History
+              {waiting > 0 && (
+                <span className={styles.badge}>
+                  <span aria-hidden="true">{waiting}</span>
+                  <span className="visually-hidden">
+                    , {waiting} {waiting === 1 ? 'battle' : 'battles'} waiting to be saved
+                  </span>
+                </span>
+              )}
             </GoldButton>
           </nav>
         </div>

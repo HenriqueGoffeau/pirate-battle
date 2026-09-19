@@ -2,6 +2,11 @@ import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode, type Synt
 import { WoodPanel } from './WoodPanel'
 import styles from './GameDialog.module.css'
 
+function openModal(dialog: HTMLDialogElement): void {
+  dialog.showModal()
+  dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+}
+
 type GameDialogProps = {
   open: boolean
   title: string
@@ -19,7 +24,7 @@ export function GameDialog({ open, title, actions, children, panelClassName, onC
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) openModal(dialog)
     else if (!open && dialog.open) dialog.close()
   }, [open])
 
@@ -29,7 +34,7 @@ export function GameDialog({ open, title, actions, children, panelClassName, onC
   }
 
   const keepOpen = (event: SyntheticEvent<HTMLDialogElement>) => {
-    if (open && event.currentTarget.isConnected) event.currentTarget.showModal()
+    if (open && event.currentTarget.isConnected) openModal(event.currentTarget)
   }
 
   return (

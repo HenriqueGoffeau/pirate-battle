@@ -38,13 +38,35 @@
 
 @media (max-height: 500px) {
   .panel {
-    --button-width: 170px;
-    gap: 4px;
+    --button-width: 150px;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'title log'
+      'tabs log'
+      'menu log';
+    align-items: center;
+    gap: 8px 16px;
   }
 
   .title {
+    grid-area: title;
+    width: var(--button-width);
     margin: 0;
-    font-size: 22px;
+    font-size: 20px;
+  }
+
+  .panel > [role='tablist'] {
+    --button-width: 150px;
+    grid-area: tabs;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .tabPanel {
+    grid-area: log;
+    align-self: stretch;
+    align-content: center;
   }
 
   .caption {
@@ -52,6 +74,71 @@
   }
 
   .menu {
+    grid-area: menu;
     margin-bottom: 0;
   }
+}
+
+.rank {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.star {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  vertical-align: -2px;
+  background: image-set(url('../sprites/icon_score.png') 1x, url('../sprites/icon_score@2x.png') 2x) center / contain no-repeat;
+}
+
+.captain {
+  min-width: 9em;
+}
+
+.you {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e0b95a;
+  color: #1f2a38;
+  font: 800 10px / 1.2 system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+.points {
+  color: #e0b95a;
+  font-variant-numeric: tabular-nums;
+}
+
+.survived,
+.defeated {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.survived {
+  color: #9fdc8c;
+}
+
+.defeated {
+  color: #f08a7a;
+}
+
+.custom {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid rgb(224 185 90 / 70%);
+  border-radius: 999px;
+  color: #e0b95a;
+  font: 700 10px / 1.2 system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: 1px;
 }
