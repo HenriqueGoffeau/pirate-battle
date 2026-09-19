@@ -12,7 +12,7 @@ export function LoadingPanel({ progress }: { progress: number | null }) {
   const percent = Math.round((progress ?? 0) * 100)
   const clipRight = ((frameWidth - fillLeft - fillWidth * (percent / 100)) / frameWidth) * 100
   return (
-    <div className={styles.screen}>
+    <div className={`${styles.screen} ${styles.delayed}`}>
       <WoodPanel className={styles.panel}>
         <p id={id} className={styles.title}>
           Loading the fleet…

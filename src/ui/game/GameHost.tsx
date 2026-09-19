@@ -7,6 +7,7 @@ import { recordFinishedMatch } from '../../data/outbox'
 import { GameSession } from '../../session/GameSession'
 import { portraitQuery } from '../../session/lifecycle'
 import { createSessionStore, type MatchState } from '../../session/store'
+import { testControl } from '../../session/testControl'
 import { LiveRegion } from '../a11y/LiveRegion'
 import { useMatchAnnouncer } from '../a11y/useMatchAnnouncer'
 import { useMediaQuery } from '../components/useMediaQuery'
@@ -30,7 +31,7 @@ export function GameHost({ showingResult }: GameHostProps) {
   const hudRef = useRef<HudHandle>(null)
   const touchRef = useRef<TouchControlsHandle>(null)
   const [store] = useState(createSessionStore)
-  const [matchConfig] = useState(() => createMatchConfig(loadOptions(), newSeed(), loadMatchBalance()))
+  const [matchConfig] = useState(() => createMatchConfig(loadOptions(), testControl.seed() ?? newSeed(), loadMatchBalance()))
   const hud = useSyncExternalStore(store.subscribe, store.getSnapshot)
   const portrait = useMediaQuery(portraitQuery)
   const [searchParams] = useSearchParams()
@@ -44,7 +45,7 @@ export function GameHost({ showingResult }: GameHostProps) {
   useEffect(() => {
     const host = canvasHostRef.current
     if (!host) return
-    const session = new GameSession(host, store, { matchConfig, debugOverlay })
+    const session = new GameSession(host, store, { matchConfig, debugOverlay, clock: testControl.clockForSession() })
     sessionRef.current = session
     const offFired = session.on('weaponFired', ({ side, cooldownMs }) => touchRef.current?.sweep(side, cooldownMs))
     const offHit = session.on('playerHit', () => hudRef.current?.flash())

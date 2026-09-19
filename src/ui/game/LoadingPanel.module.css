@@ -8,6 +8,16 @@
   background: #1d4a63;
 }
 
+.delayed {
+  animation: reveal 0s 150ms both;
+}
+
+@keyframes reveal {
+  from {
+    visibility: hidden;
+  }
+}
+
 .screen::before {
   content: '';
   position: absolute;

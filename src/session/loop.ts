@@ -5,13 +5,13 @@ const maxFrameMs = 250
 export type LoopHandlers = {
   isRunning(): boolean
   step(dtSeconds: number): void
-  render(): void
+  render(draw: boolean): void
 }
 
 export function startLoop(clock: Clock, handlers: LoopHandlers): () => void {
   let last = clock.now()
   let accumulator = 0
-  return clock.onFrame((time) => {
+  return clock.onFrame((time, lastOfBatch) => {
     const frame = Math.min(time - last, maxFrameMs)
     last = time
     if (handlers.isRunning()) {
@@ -27,6 +27,6 @@ export function startLoop(clock: Clock, handlers: LoopHandlers): () => void {
     } else {
       accumulator = 0
     }
-    handlers.render()
+    handlers.render(lastOfBatch)
   })
 }

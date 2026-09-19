@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -b",
     "test": "vitest run --passWithNoTests",
-    "test:e2e": "playwright test --pass-with-no-tests",
+    "test:e2e": "playwright test",
+    "test:e2e:docker": "node scripts/e2e-docker.ts",
     "convert-assets": "node scripts/convert-assets.ts && node scripts/build-map.ts",
     "map:watch": "node scripts/build-map.ts --watch"
   },

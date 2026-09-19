@@ -212,6 +212,11 @@ step(w, dt, intents):            // order is the rulebook
   11 endCheck                     // hp ≤ 0 → defeated (wins ties); time ≤ 0 → timeUp
 ```
 
+As built (M6): the frame callback is `(time, lastOfBatch)`. `RealClock` always passes `true`; `ManualClock.advance(ms)` passes
+`true` only for the last frame of the call, and the loop draws only then (every frame still steps and publishes the HUD, and state
+changes such as ready → running still happen on every frame). A 60 s `advance` takes about a second in headless Chromium instead of
+a minute of software-WebGL frames. Because of float accumulation, a 60 s session ends on step 3601 (tests advance 61 s).
+
 Rules: sim time advances only inside `step`; no `setTimeout` in sim; all timers (cooldowns, spawn, lifetimes) are
 `w.time`-relative. Pause zeroes the accumulator on resume. `world.rng` (seeded) is used only by sim systems;
 render uses a separate RNG. Entity model: plain data arrays (`ships[]`, `projectiles[]`, `effects[]`) + system functions;
@@ -451,7 +456,10 @@ States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused →
 - Pixi 8.21's loader drops a failed request from its cache and rethrows without logging, so `ensureLoaded` Retry really reloads.
 - Manifest bundle `combat`: `ships` (1× only — retina copies are not 2×), `tiles`/`ui` chosen 1× or 2× once at boot by `devicePixelRatio > 1.5`.
 - `ensureLoaded(onProgress)` memoises the promise at module level; on failure the memo is cleared so Retry works.
-  Called inside `GameSession.start()` before `app.init()`; second match hits `ready` instantly.
+  Called inside `GameSession.start()` before `app.init()`; second match hits `ready` instantly. As built (M6): "instantly" is
+  ≈ 40 ms (map fetch from cache + `app.init()`), during which the state is still `loading`; the loading panel therefore becomes
+  visible only after 150 ms (a zero-length CSS animation holding `visibility: hidden`), so a cached load never flashes it (found
+  by TEST-02). The same panel is the lazy-chunk fallback and gets the same delay.
 - Texture index `textures.ship[stage][color]` built once. `ShipView` swaps texture when `damageStage(health/max)` changes (FX-03).
 - Effects: explosion sprites scaled/faded in code (FX-02); muzzle flash = small explosion sprite 120 ms (FX-01); hit flash tint on the ship (FX-04).
   As built: `impact` burst where a ball hits a ship or an island; `wreck` = the ship's stage-3 sprite drawn under ships, fading
@@ -687,6 +695,58 @@ because it caught a ManualClock bug, and verified to fail against the old code).
 Per-spec map (hooks · scenario · seed): the D9 table of design session 6 (Quality), kept outside this repository; it is
 inlined here in M6.
 
+As built (M6):
+- **Test API** (`src/testing/testApi.ts`, types in `src/testing/types.ts`): installed from `main.tsx` before MSW starts when the
+  URL has `test=1`, as its own ≈ 2.6 kB chunk (never downloaded otherwise). It reaches the match through
+  `session/testControl.ts`: `enable()`, a sticky seed and a sticky "next sessions use a `ManualClock`" flag read by `GameHost`, and
+  the current session, which `GameSession` attaches on construction and detaches on dispose (store, clock, and read getters for
+  the world and the state). `getSnapshot()` returns a frozen copy: state, time, score, timeLeftSec, ended/endReason, the player
+  (position, heading, speed, turnVelocity, health, cooldowns per group), enemies, projectiles (faction, ownerId, position,
+  direction, speed, consumed), effect count, spawns { count, nextAt }, config { sessionSeconds, spawnIntervalSec, configKey,
+  seed, custom }. `getMap()` adds cols/rows/tile/size, the solid mask, the player start and the spawn entries.
+  `waitForState` resolves from store and session subscriptions (no polling). `clearLocal()` removes `pb:v1:*` except the scenario.
+  Nothing mutates combat (TEST-16).
+- **Fixture** (`e2e/fixtures/pbPage.ts`, `pb`): `open(path, { scenario = 'success', reset = true })` → `path?test=1&scenario=…&reset=1`
+  and waits for `body[data-msw-ready]` and the API; `startMatch({ seed = 42, options })` writes options, seeds, switches to the
+  manual clock, clicks Play, waits for `ready` and steps once into `running`; `step`, `advance`, `hold(code, ms)`, `snapshot`,
+  `map`, `state`, `waitForState`, `setScenario`, `resetServer`, `requestLog`, `clearLocal`, `setOptions`. Console guard: any
+  `console.error`, page error or React warning fails the test unless that test allows the exact pattern (failure scenarios allow
+  "Failed to load resource … 503", the asset spec allows `net::ERR_FAILED`).
+- **Config**: projects `desktop` (Chromium 1280×720, DPR 1) and `mobile` (Pixel 7 user agent, 915×412 landscape, DPR 1, touch;
+  runs test-01, test-09 and visual); timezone America/Sao_Paulo so dates are identical on every host; `reducedMotion: 'reduce'`;
+  no retries; 4 workers locally, 2 in CI; list + HTML reporters; trace, video and screenshot kept on failure; the web server is
+  `npm run build && npm run preview` (reused if already running locally). Baselines live in
+  `e2e/__screenshots__/<spec>/<name>-<project>-<platform>.png` (`maxDiffPixelRatio 0.005`, animations disabled), so the Windows
+  set and the Linux set (Docker/CI) sit side by side.
+- **Docker / CI**: `npm run test:e2e:docker` (`scripts/e2e-docker.ts`) runs the suite in `mcr.microsoft.com/playwright:v<installed
+  version>-noble` with `node_modules` in a named volume and `CI=1` (it builds and serves its own preview); add
+  `-- --update-snapshots` to regenerate the Linux baselines. `.github/workflows/e2e.yml` runs lint, typecheck, Vitest and
+  Playwright in the same image and uploads the HTML report (the repository has no remote yet).
+- **Written in parallel**: the lead wrote the harness, TEST-01 and the visual spec; three agents wrote TEST-03–06, TEST-02/07/08/09
+  and TEST-10–12 against one shared build, each owning its files; the lead reviewed and integrated them.
+
+| ID | Spec · what it proves | Hooks | Scenario · seed | Projects |
+| --- | --- | --- | --- | --- |
+| TEST-01 | `test-01-options`: −/+ stop at 60/180 and 1/10 (disabled at the edge); a typed 75 shows "Use steps of 10 seconds." with `aria-invalid` and is not saved; Save 90/5 survives a reload and the next match's snapshot has `s90-i5`; corrupt or invalid stored options fall back to 120/3 | startMatch, snapshot, localStorage | success · 42 | D + M |
+| TEST-02 | `test-02-assets`: while `ships.json` is held (`context.route`) the bar is between 0 and 100 and there is no canvas, then ready → running; aborted → `assetError` panel with Retry/Main Menu, no canvas, no snapshot, unroute + Retry → the match runs; a second match in the same page makes zero asset requests | waitForState, context.route | success · 42 | D |
+| TEST-03 | `test-03-movement`: speed follows min(speed, accel·t) and the distance along the heading, release coasts speed²/2·drag, turning ramps at turnAccel up to turnRate; at the top rim both hull circles stay inside on every step and the ship slides along it; at an island face no hull circle overlaps a solid tile and the ship slides along the coast | manual clock, snapshot, map | success · 42 | D |
+| TEST-04 | `test-04-combat`: Space → 1 ball along the heading; Q/E → 3 parallel balls on the correct side; Space held 2 s → floor(2/cooldown)+1 balls; balls pass through an arriving Shooter; aimed fire sinks the Chaser (40 → 20 → sunk), score exactly 1 and still 1 two seconds later | manual clock, snapshot | success · 42 (3 s and 10 s spawns) | D |
+| TEST-05 | `test-05-enemies`: spawns.count = floor(t/interval) and nextAt steps by the interval; the first two kinds differ (42: Chaser then Shooter; 7: Shooter then Chaser); a Chaser rams an idle player for exactly impactDamage, disappears, score unchanged; a Shooter stays ≤ attackRange with its mean distance inside [minRange, attackRange] (it dips up to one tile inside minRange while turning) and fires | manual clock, snapshot | success · 42, 7 | D |
+| TEST-06 | `test-06-match-end`: still running at 59.9 s, ended `timeUp` after, 5 s more change nothing, "You survived the attack"; an idle player with 1 s spawns is sunk (`defeated`, "Your ship was sunk"); Play Again after a scoring defeat → time 0, score 0, full health, no enemies or balls, cooldowns 0 | manual clock, waitForState | success · 42 | D |
+| TEST-07 | `test-07-pause`: P/P, Esc/Esc and P/Resume each freeze time, cooldowns and spawns for 5 s and resume (60 steps = 1 s); W held into a pause and D/Q pressed while paused stay inert until pressed again; window blur, a hidden tab (stays paused while hidden) and the HUD Pause button pause | manual clock, snapshot, synthetic blur / visibilitychange | success · 42 (60 s / 10 s) | D |
+| TEST-08 | `test-08-result`: the Result matches the snapshot (score, 01:00, Time's up), status Saving → Saved with exactly one PUT 201; a reload and a fresh visit of /result show the same result from storage; Play Again gives a fresh match, Main Menu and Back never return to a finished match | manual clock, requestLog, localStorage | slow · 42 | D |
+| TEST-09 | `test-09-navigation`: Pause → Main Menu mid-match records nothing; menu ↔ play 10× keeps ≤ 1 canvas and the window/document listeners return to the menu baseline (CDP `DOMDebugger`); Forward, a reload and a typed /play land on the menu; touch: two fingers on Sail forward + Broadside left move the ship and fire exactly 3 balls to port, releasing stops both | requestLog, CDP | success · 42 | D + M (touch on M) |
+| TEST-10 | `test-10-log-tabs`: manyPages ranking pages checked cell by cell (★, You at 03 and 07, both tie-breaks), history 2 pages, a tab shown again refetches; empty messages with Play; rankingFails → skeleton, 503 ×3, alert + Retry, history still loads, Retry after switching to success shows rows; slow → skeleton and Loading…, paging dims and disables the arrows until the next page arrives | setScenario, requestLog | manyPages, empty, rankingFails, slow | D |
+| TEST-11 | `test-11-save`: a finished match is PUT once (201), Saved, and both tabs go from empty to showing it; downThenRecover → pending with countdown and badge, the badge survives a reload, PUTs [503, 503, 201], one record, lastResult saved | manual clock, requestLog, localStorage | success, downThenRecover · 42 | D |
+| TEST-12 | `test-12-resend`: timeoutAfterSave → Saving while the PUT hangs (the record is already stored), Not saved after the 8 s client timeout, Retry now → Saved, PUTs [201, 200], one history row; outOfOrder → the late page-1 refetch (#3) never replaces page 2 (#4) | requestLog | timeoutAfterSave, outOfOrder | D |
+| TEST-14 | `visual`: menu; arena after 5 s with seed 42 and no input; Result after time-up (60 s / 10 s) | manual clock | success · 42 | D + M |
+
+38 tests; 48 runs across the two projects (the touch test is skipped on desktop). TEST-13 = the two projects, TEST-15 = seed +
+manual clock, TEST-16 = the API above, TEST-17 = a fresh context per test plus `reset=1`, TEST-18 = HTML report + traces.
+Notes from the agents for ARCHITECTURE.md §19 (not bugs): sliding along an island at a steep angle is slow because each step keeps
+only the tangential share of the speed; a Shooter dips about 40 px inside minRange while it turns (rudder inertia); the ship settles
+one step deeper in the edge band than `edgeBand·speed/edgePush` because the push is applied after the move.
+
 ## 18. Performance (PERF-01..04)
 
 Loading: route-level code split (§3) keeps Pixi out of the first download; MSW's worker bundle (≈ 431 kB at M5, fixtures included) loads in parallel
@@ -727,7 +787,7 @@ Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A
 | M4 | 3.5 | Remaining primitives (Tabs, steppers), Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus. As built: player name editing on the Menu (moved here from M5); the Result save-status row moved to M5 (it needs the outbox); the Log renders its empty state until M5 feeds it | All screens usable by keyboard and touch; no clipping at 640×360 |
 | M5 | 3 | Contracts, Axios, queries, outbox, storage codec (options/player part landed in M4), Result save-status row (moved from M4), handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag. As built also: offline banner, the menu pending badge, 409 on a changed body, server-side custom check, a two-column Log on short screens | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
 | CP2 | h20.5 | If behind: M6 keeps 3.5 h, M7 shrinks to 1.5 h | Manual pass of every TEST-ID on the deployed build |
-| M6 | 3.5 | Test API, pbPage fixture, 12 spec files (order 01,03,04,06,07 → 02,05,08,09 → 10,11,12), 6 baselines, report + traces committed | `test:e2e` green twice locally, once in CI |
+| M6 | 3.5 | Test API, pbPage fixture, 12 spec files (order 01,03,04,06,07 → 02,05,08,09 → 10,11,12), 6 baselines, report + traces committed. As built: specs written in parallel by three agents on the lead's harness; ManualClock draws once per advance; loading panel delayed 150 ms; Windows and Linux baselines; Docker runner + CI workflow | `test:e2e` green twice locally, once in CI (no remote yet: the Docker run of the same image stands in until the repository is pushed) |
 | M7 | 2 | Perf run, memory check, REPORT.md, README, ARCHITECTURE.md (outline §21), licenses, tagged deploy | Clean clone runs dev/build/preview/lint/typecheck/test:e2e; deployed SHA = tag |
 
 Stretch order (buffer only): 1 Shooter side cannons (0.75 h) · 2 balance tuning (0.5) · 3 restore two-circle hulls if dropped ·

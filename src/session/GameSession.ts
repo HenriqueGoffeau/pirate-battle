@@ -16,6 +16,7 @@ import { step } from '../sim/step'
 import { createWorld, playerOf } from '../sim/world'
 import { attachAutoPause, isPlayBlocked } from './lifecycle'
 import { startLoop } from './loop'
+import { testControl, type InspectedSession } from './testControl'
 import type {
   HudSnapshot,
   MatchResult,
@@ -51,6 +52,7 @@ export class GameSession {
   private readonly listeners = new Map<keyof SessionEvents, Set<(payload: never) => void>>()
   private readonly readyAt: number[] = []
   private readonly firedGroups = new Set<CannonGroup>()
+  private readonly inspected: InspectedSession
 
   constructor(host: HTMLElement, store: SessionStore, options: GameSessionOptions) {
     this.host = host
@@ -58,6 +60,8 @@ export class GameSession {
     this.matchConfig = options.matchConfig
     this.debugOverlay = options.debugOverlay
     this.clock = options.clock ?? new RealClock()
+    this.inspected = { store, clock: this.clock, world: () => this.world, state: () => this.state }
+    testControl.attach(this.inspected)
   }
 
   async start(): Promise<void> {
@@ -128,6 +132,7 @@ export class GameSession {
     this.app = null
     this.world = null
     this.endFrame = null
+    testControl.detach(this.inspected)
   }
 
   private async boot(): Promise<void> {
@@ -185,7 +190,7 @@ export class GameSession {
     this.stopLoop = startLoop(this.clock, {
       isRunning: () => this.state === 'running',
       step: (dt) => this.tick(world, dt),
-      render: () => this.frame(world, arena, app),
+      render: (draw) => this.frame(world, arena, app, draw),
     })
   }
 
@@ -219,12 +224,14 @@ export class GameSession {
     this.listeners.get(event)?.forEach((listener) => (listener as SessionEventListener<K>)(payload))
   }
 
-  private frame(world: World, arena: ArenaStage, app: Application): void {
+  private frame(world: World, arena: ArenaStage, app: Application, draw: boolean): void {
     if (this.state === 'ready' || this.state === 'resuming') this.enter(isPlayBlocked() ? 'paused' : 'running')
-    arena.draw(world)
-    app.render()
-    if (this.state === 'ended' && this.endFrame === null) {
-      this.endFrame = captureFrame(app.canvas, app.screen.width, app.screen.height)
+    if (draw) {
+      arena.draw(world)
+      app.render()
+      if (this.state === 'ended' && this.endFrame === null) {
+        this.endFrame = captureFrame(app.canvas, app.screen.width, app.screen.height)
+      }
     }
     this.publishHud(world)
   }

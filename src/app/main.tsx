@@ -17,6 +17,10 @@ async function boot(): Promise<void> {
   const search = new URLSearchParams(window.location.search)
   const dev = search.get('dev')
   if (dev === '1' || dev === '0') saveDevMode(dev === '1')
+  if (search.get('test') === '1') {
+    const { installTestApi } = await import('../testing/testApi')
+    installTestApi()
+  }
   const mocks = await startMsw(search)
   setOffline(mocks === null)
   startOutbox()
