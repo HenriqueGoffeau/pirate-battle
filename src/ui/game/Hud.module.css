@@ -60,6 +60,17 @@
   background: center / 100% 100% no-repeat;
 }
 
+.healthText {
+  position: absolute;
+  inset: 0 0 calc(2px * var(--hud-scale));
+  display: grid;
+  place-items: center;
+  color: #f3e9d2;
+  font: 800 calc(17px * var(--hud-scale)) / 1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 75%);
+}
+
 .green {
   background-image: image-set(url('../sprites/health_fill_green.png') 1x, url('../sprites/health_fill_green@2x.png') 2x);
 }

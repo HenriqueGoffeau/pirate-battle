@@ -12,11 +12,17 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.small {
+  width: 44px;
+  height: 44px;
+}
+
 .button::after {
   content: '';
   position: absolute;
-  inset: 16px;
+  inset: 25%;
   background: center / contain no-repeat;
+  pointer-events: none;
 }
 
 .button:hover {
@@ -40,4 +46,41 @@
 
 .pause::after {
   background-image: image-set(url('../sprites/icon_pause.png') 1x, url('../sprites/icon_pause@2x.png') 2x);
+}
+
+.minus::after {
+  background-image: image-set(url('../sprites/icon_minus.png') 1x, url('../sprites/icon_minus@2x.png') 2x);
+}
+
+.plus::after {
+  background-image: image-set(url('../sprites/icon_plus.png') 1x, url('../sprites/icon_plus@2x.png') 2x);
+}
+
+.turnLeft::after {
+  background-image: image-set(url('../sprites/icon_turn_left.png') 1x, url('../sprites/icon_turn_left@2x.png') 2x);
+}
+
+.turnRight::after {
+  background-image: image-set(url('../sprites/icon_turn_right.png') 1x, url('../sprites/icon_turn_right@2x.png') 2x);
+}
+
+.forward::after {
+  background-image: image-set(url('../sprites/icon_forward.png') 1x, url('../sprites/icon_forward@2x.png') 2x);
+}
+
+.fireLeft::after {
+  background-image: image-set(url('../sprites/icon_fire_left.png') 1x, url('../sprites/icon_fire_left@2x.png') 2x);
+}
+
+.fireFront::after {
+  background-image: image-set(url('../sprites/icon_fire_front.png') 1x, url('../sprites/icon_fire_front@2x.png') 2x);
+}
+
+.fireRight::after {
+  background-image: image-set(url('../sprites/icon_fire_right.png') 1x, url('../sprites/icon_fire_right@2x.png') 2x);
+}
+
+.edit::after {
+  inset: 28%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f6e7c8' stroke='%237a4a1e' stroke-width='1.2' stroke-linejoin='round' d='M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z'/%3E%3C/svg%3E");
 }

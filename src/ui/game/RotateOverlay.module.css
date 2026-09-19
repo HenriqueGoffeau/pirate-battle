@@ -1,0 +1,53 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgb(22 41 58 / 96%);
+  color: #f3e9d2;
+  text-align: center;
+}
+
+.icon {
+  width: 88px;
+  height: 88px;
+  background:
+    image-set(url('../sprites/icon_restart.png') 1x, url('../sprites/icon_restart@2x.png') 2x) center / 50% 50% no-repeat,
+    image-set(url('../sprites/button_round_normal.png') 1x, url('../sprites/button_round_normal@2x.png') 2x) center / 100% 100%
+      no-repeat;
+}
+
+.text {
+  max-width: 260px;
+  margin: 0;
+  font: 800 22px / 1.25 system-ui, sans-serif;
+  text-transform: uppercase;
+}
+
+.hint {
+  margin: 0;
+  color: rgb(243 233 210 / 75%);
+  font: 600 14px / 1.4 system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .icon {
+    animation: tilt 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes tilt {
+  0%,
+  30% {
+    transform: rotate(0);
+  }
+
+  60%,
+  100% {
+    transform: rotate(90deg);
+  }
+}

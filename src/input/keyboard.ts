@@ -1,4 +1,4 @@
-import { actionFor } from './bindings'
+import { actionFor } from '../shared/bindings'
 import type { InputState } from './inputState'
 
 export function attachKeyboard(state: InputState, onPause: () => void, target: Window = window): () => void {

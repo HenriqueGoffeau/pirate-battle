@@ -1,0 +1,86 @@
+.screen {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: #1d4a63;
+}
+
+.screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('../sprites/scene_background.png') center / cover no-repeat;
+  filter: saturate(0.8) brightness(0.62);
+}
+
+.panel {
+  --button-width: 220px;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: min(420px, calc(100vw - 24px));
+  text-align: center;
+}
+
+.title {
+  margin: 4px 0 0;
+  font: 800 22px / 1.25 system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.text {
+  margin: 6px 0 0;
+  font: 600 15px / 1.4 system-ui, sans-serif;
+}
+
+.alert {
+  display: grid;
+}
+
+.bar {
+  position: relative;
+  width: 256px;
+  max-width: 100%;
+  aspect-ratio: 256 / 48;
+  margin-bottom: 6px;
+  background: image-set(url('../sprites/health_frame.png') 1x, url('../sprites/health_frame@2x.png') 2x) center / 100% 100% no-repeat;
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  background: image-set(url('../sprites/health_fill_green.png') 1x, url('../sprites/health_fill_green@2x.png') 2x) center / 100% 100%
+    no-repeat;
+}
+
+.percent {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #f3e9d2;
+  font: 800 14px / 1 system-ui, sans-serif;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 70%);
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 6px;
+}
+
+@media (max-height: 500px) {
+  .panel {
+    --button-width: 170px;
+    gap: 6px;
+  }
+
+  .actions {
+    grid-template-columns: auto auto;
+  }
+}

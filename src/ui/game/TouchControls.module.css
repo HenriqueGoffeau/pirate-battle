@@ -1,0 +1,61 @@
+@property --sweep {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 1turn;
+}
+
+.controls {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .controls {
+    display: block;
+  }
+}
+
+.cluster {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  width: 132px;
+  height: 122px;
+}
+
+.steering {
+  left: calc(env(safe-area-inset-left, 0px) + 8px);
+}
+
+.cannons {
+  right: calc(env(safe-area-inset-right, 0px) + 8px);
+}
+
+.button {
+  position: absolute;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.top {
+  top: 0;
+  left: 34px;
+}
+
+.left {
+  bottom: 0;
+  left: 0;
+}
+
+.right {
+  right: 0;
+  bottom: 0;
+}
+
+.sweep {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: conic-gradient(transparent var(--sweep), rgb(16 28 40 / 62%) 0);
+  pointer-events: none;
+}

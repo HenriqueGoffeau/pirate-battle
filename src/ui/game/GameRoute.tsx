@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import { Navigate, NavigationType, useLocation, useNavigate, useNavigationType, useSearchParams } from 'react-router'
 import type { MatchResult } from '../../session/store'
+import { LoadingPanel } from './LoadingPanel'
 import { ResultDialog } from './ResultDialog'
 import styles from './GameHost.module.css'
 
@@ -40,9 +41,7 @@ export function GameRoute() {
         <Suspense
           fallback={
             <div className={styles.root}>
-              <p className={styles.status} role="status">
-                Loading the fleet…
-              </p>
+              <LoadingPanel progress={null} />
             </div>
           }
         >

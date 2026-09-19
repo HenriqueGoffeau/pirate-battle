@@ -17,10 +17,10 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 | Deploy | Self-hosted Docker image (Node build stage → nginx serving `dist` on plain HTTP `:8080`) behind the author's existing reverse proxy, which terminates TLS with a trusted certificate on a dedicated subdomain root. HTTPS is mandatory: MSW's service worker only registers in a secure context. Subdomain root means no Vite `base`, router `basename` or worker-scope changes |
 | Arena | One hand-authored map, 24×14 tiles of 64 px (1536×896 logical), always fully visible at the same scale rule on every device (fair ranking). **No letterbox bars**: the sea continues past the arena on any screen shape and thickens into dense fog. No camera, no cropping, no procedural generation |
 | Spawn points | **Entry points on the arena border**, authored in map data. Enemies are created just outside the rim, hidden, and **sail in through the fog** in an `arriving` state (straight in, can't fire, can't be hit or ram) until the whole hull is inside. Every entry allows both kinds; the type is a seeded weighted pick. Runtime filter = entry distance to the player's **current** position ≥ `minPlayerDist[kind]` (Chaser 448, Shooter 320: the rammer gets a longer runway, EN-06) and no ship (player included) within `occupancyRadius` of the arrival point. No entry is locked to a kind by position |
-| Options screen | Exactly two settings: session seconds (60–180, step 10, default 120), spawn interval (1–10 s, step 1, default 3). Steppers + explicit Save |
+| Options screen | Exactly two settings: session seconds (60–180, step 10, default 120), spawn interval (1–10 s, step 1, default 3). Steppers + explicit Save. As built (M4): the value between the −/+ round buttons is a typed field (`inputMode=numeric`), so validation is real: `validateOptions` (config, Vitest) reports out of range, off-step (75 → "Use steps of 10 seconds."), fractional and non-numbers; the error shows on blur or Save (`role=alert`, `aria-invalid`, `aria-describedby` = limits + error), −/+ snap to the step and disable at the limits, visible limits text under each field. Save writes `pb:v1:options` and says "Saved. Applies to your next battle."; invalid drafts are not saved; stored data that fails validation falls back to the defaults |
 | configKey | `s{sessionSeconds}-i{spawnIntervalSec}` (e.g. `s120-i3`). Records made with a non-default balance carry `custom: true` and are excluded from ranking |
 | Dev panel | Behind `?dev=1` (persisted `pb:v1:dev` from M5; M1 reads the query only). Network tab: scenario select, reset server, clear outbox, flags. Balance tab: JSON textarea editing `GameConfig`, Apply → next match, Reset. On `/play`, `?dev=1` also draws the **map overlay** (§6) |
-| Player identity | Generated UUID `playerId` + editable name, default "Captain Jack", stored `pb:v1:player`, sent as `X-Player-Id` |
+| Player identity | Generated UUID `playerId` + editable name, default "Captain Jack", stored `pb:v1:player`, sent as `X-Player-Id`. The name is edited **on the Main Menu** ("Captain Anne Bonny" + pencil round button → inline field, Save/Cancel, Enter/Esc), because a first-time player will not open Match History and Options must stay at two settings (CFG-03). 2–20 characters after trimming and collapsing spaces; letters, numbers, spaces, `'`, `.`, `-`. The pack has no pencil icon, so the pencil is a small inline SVG in the pack's round button |
 | Ranking rows | One row per match; all rows of the local player get the YOU badge; default view = current options |
 | Tie-break | score DESC → effectiveSec ASC → playedAt ASC → matchId ASC |
 | Ship colors | Player = black/skull (color index 1). Chaser = red/cross (2). Shooter = blue/horse (4) |
@@ -32,7 +32,7 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 | Pause | Manual (P, Esc or the HUD pause button) + auto on blur / hidden / portrait. Portrait means `(orientation: portrait) and (pointer: coarse)`: only touch devices, so a tall desktop window keeps playing. Resume by the Resume button, P or Esc (no countdown unless stretch). A key held through a pause must be pressed again after resuming (auto-repeat is ignored). Input cleared on every lifecycle change and on dispose |
 | Pause → Options | Does not exist. Pause dialog = Resume / Main Menu |
 | Match end | The sim stops at once (MR-04); the frozen arena shows a banner for 1.2 s ("Time's up!" or "Your ship was sunk!"), then the **Result dialog opens over the frozen match**, like Pause (not a separate page: a page of its own is only worth it if it showed the history). Surviving until time runs out is a win: Result headline "You survived the attack" (caption `TIME'S UP` in green); defeat: "Your ship was sunk" (`DEFEATED` in #F08A7A) |
-| Mobile | Landscape only; portrait shows a rotate overlay and auto-pauses. On wide phones the arena leaves fog zones left and right; the touch buttons (M4) sit there, so thumbs never cover the playable water |
+| Mobile | Landscape only; portrait shows a rotate overlay and auto-pauses. On wide phones the arena leaves fog zones left and right; the touch buttons (M4) sit there, so thumbs never cover the playable water. As built: two clusters in the bottom corners like `sample.png` (steering: forward raised between turn-left/turn-right; cannons: bow raised between left/right broadside), 64 px sprites, shown only on `(pointer: coarse)`; on 915×412 they sit in the fog zone with a few px over the arena's fog band; on 640×360 (no fog zone) they cover the arena's bottom corners, which are fog/edge water. The rotate overlay is shown only in the game (menus work in portrait) and replaces the Pause dialog while portrait (a modal dialog would sit above any overlay in the top layer); rotating back shows the dialog |
 | Routing | Real URLs `/`, `/options`, `/play`, `/result`, `/log`. Reload on `/play` → menu (match abandoned, never recorded, CFG-06). A match starts only from an in-app navigation: any POP onto `/play` (reload, typed URL, Back/Forward) redirects to the menu, except with `?dev=1` so the map-editing reload loop keeps working. Game → Result, Pause → Main Menu and both Result buttons replace the history entry, so Back never lands on a finished match. `/play` and `/result` are children of one pathless layout route (`GameRoute`), so the frozen match stays mounted when the URL changes to `/result`. Reload on `/result` → the same Result dialog over a **snapshot of the battle's final frame** (the match itself is gone, CFG-06), from the router history state in M3 and local storage from M5; a fresh tab (no history entry) gets a plain sea gradient |
 | Audio | Out of scope |
 | Pending display | Result screen status row + menu badge. History shows confirmed rows only |
@@ -78,14 +78,16 @@ UI never calls the sim; it calls `handle.pause()/resume()`.
 src/
   app/        main.tsx (startMsw → flushOutbox → render), router.tsx, providers.tsx
   config/     gameConfig.ts, userOptions.ts (limits, validate), matchConfig.ts (snapshot, configKey, custom)
-  shared/     clock.ts (Clock, RealClock, ManualClock), rng.ts (mulberry32), storage.ts, uuid.ts, math.ts,
+  shared/     clock.ts (Clock, RealClock, ManualClock), rng.ts (mulberry32), storage.ts (read/write JSON, safe fallback), uuid.ts
+              (randomUUID, getRandomValues fallback for plain-HTTP LAN testing), math.ts, bindings.ts (moved from input at M4:
+              the menu builds its controls table from it and ui may not import input),
               mapData.ts (MapData, MapSource types: shared because assets implements MapSource and may import only shared),
               format.ts (formatClock mm:ss)
   sim/        entities.ts (types), world.ts (createWorld, createShip, hull circles, effects, damageStage), grid.ts (solid
               mask, rounded island corners, island bounds, DDA raycast, circle push-out), step.ts,
               systems/ (ai, movement, weapons, projectiles, collision, damage, spawn, lifecycle = cleanup + effects + endCheck)
   render/     stage.ts (layers + per-frame draw), views/ (ShipView, HealthBarView), effects.ts, fog.ts, viewport.ts, debugOverlay.ts
-  input/      bindings.ts, inputState.ts (keys by code + button actions → ShipIntent), keyboard.ts, pointer.ts (M4)
+  input/      inputState.ts (keys by code + button actions → ShipIntent), keyboard.ts (touch buttons call setAction directly)
   shared/     … + intent.ts (ShipIntent, shared by input and sim)
   assets/     manifest.ts, loader.ts (ensureLoaded), parseTiledMap.ts (pure JSON → MapData, used by Vitest), tiledMap.ts (MapSource impl)
   session/    GameSession.ts, loop.ts, lifecycle.ts, store.ts, perfProbe.ts
@@ -131,6 +133,9 @@ unhashed files copied from `public/assets/` (`/assets/*`, revalidated).
   the store while the disposed session can no longer publish. `dispose()` is synchronous.
 - Store: `SessionStore { getSnapshot(): HudSnapshot; subscribe(cb) }` consumed with `useSyncExternalStore`; published after each frame
   only when a field changed (`Object.is` per key). Edge events (`weaponFired{side, cooldownMs}`, `playerHit`, `enemyDestroyed`) via `handle.on()`, no state.
+  As built (M4): `GameSession.on(event, cb)`; the session derives the edges after each step by comparing the player's cannon
+  `readyAt`s (one `weaponFired` per group that fired), health and score with their values before the step, so the sim is untouched.
+  UI consumers act imperatively (Web Animations on the fire button's sweep and the HUD bar), never through React state.
 
 ```ts
 type HudSnapshot = {
@@ -151,7 +156,8 @@ interface SessionHandle {
 ```
 
 Who draws what: Pixi = tiles, ships, shots, effects, open-sea fog, over-ship health bars. React = HUD (health/score/time),
-touch buttons, pause button, dialogs, live region. Cooldown sweep = CSS animation started by `weaponFired`.
+touch buttons, pause button, dialogs, live region. Cooldown sweep = a `conic-gradient` overlay on the fire button whose registered
+`@property --sweep` angle is animated 0 → 1 turn over `cooldownMs` with `element.animate()` when `weaponFired` arrives.
 Pixi draw order: **sea** → baked tiles → ships → projectiles → effects → **fog** → health bars.
 - Sea (built at M1): a `TilingSprite` of the water tile reaching 2048 px beyond every arena edge, starting on a tile boundary so
   the pattern continues seamlessly from the baked arena; it fills any screen shape (even 32:9) instead of letterbox bars.
@@ -455,6 +461,10 @@ States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused →
   with a 32 px icon (≥ 56 px visible). HUD: `icon_heart` + `health_frame` with `health_fill_*` clipped to `fill_rect` by
   `clip-path` (green > 50 %, amber > 25 %, red below), `counter_panel` + `icon_score` / `icon_time`; scale 0.75, 0.6 when the
   viewport is ≤ 500 px tall.
+- Menu art (M4): `convert-assets` also copies `ui_scene_background.png` (918×515, drawn `cover` and dimmed behind every menu
+  screen and the loading/error panels), `logo_jungle_gaming.svg` (bottom-right) and the player ship `ship_2.png` (menu icon).
+  Gold button padding is computed from `--button-width`, not a percentage: padding percentages resolve against the parent's
+  width, which wrapped "MATCH HISTORY" inside wide panels (found at M4).
 - Tests simulate failure via Playwright **`context.route`**`('**/ships.json', route => route.abort())`. `page.route` does not work
   here: once MSW's service worker controls the page, asset fetches are re-issued by the worker, and only `context.route`
   intercepts service-worker traffic in Chromium (found at M1). The same applies to any request-level interception in E2E.
@@ -487,6 +497,11 @@ keydown and is not a held key; blur handling lives in `session/lifecycle.ts` (bl
 repeats are ignored and listeners are detached while paused, a key held across a pause stays inert until pressed again (MR-10).
 Touch layer: six `<button>`s with pointer events, `setPointerCapture`,
 `pointercancel`/`lostpointercapture` release, `touch-action: none`. Menu renders the controls table from `bindings`.
+As built: `pointerdown` prevents default (no focus, no text selection, no synthetic mouse events), captures the pointer and
+calls `setAction(action, true)`; up/cancel/lost-capture call it with `false`; context menu suppressed; `tabIndex=-1` because
+keyboard users have the keys. Each button captures its own pointer, so several fingers work at once (verified: forward + bow
+cannon held together → speed 120 and a shot). A finger held across a pause stays inert after resume (input is cleared on every
+lifecycle change and no new `pointerdown` arrives), matching the keyboard rule.
 
 ## 13. Data contracts and API (API-*)
 
@@ -532,11 +547,18 @@ Stale responses: AbortSignal + per-page query keys are the only guard (Session 5
 Panel states: pending (5 skeleton rows), fetching with data ("REFRESHING…" caption), placeholder (dimmed, pagination disabled),
 empty ("No battles logged yet for this configuration." + Play), error without data (message + Retry, role=alert),
 error with data (rows stay, "COULDN'T REFRESH · RETRY").
+As built (M4): `ui/screens/LogTable` renders all six from a `LogView` (`rows` undefined = no data yet, `isFetching`,
+`isPlaceholder`, `error`, `page`, `totalPages`) plus column definitions; M5 maps the TanStack Query result onto it. Tabs live
+in the URL (`/log?tab=ranking|history`, switched with replace), arrow keys/Home/End move between tabs (roving tabindex).
 
 ## 15. Local persistence (versioned, validated, safe fallback)
 
 `pb:v1:options` · `pb:v1:player` · `pb:v1:lastResult` · `pb:v1:outbox` · `pb:v1:mockDb` (fake server, capped 500 records) ·
 `pb:v1:scenario` · `pb:v1:dev` · `pb:v1:devBalance`. Outbox and mockDb are separate on purpose.
+As built (M4, `shared/storage.ts` + `data/local.ts`): the version lives in the key; values are plain JSON; every read goes
+through a parser (options → `validateOptions`, player → UUID v4 + name rules) and any exception, missing key or invalid value
+returns the fallback (defaults / a newly generated player, written back once). Writes are wrapped too and report failure
+(Options shows "Could not save: this browser is blocking storage.").
 
 ## 16. MSW (MSW-01..07)
 
@@ -596,6 +618,11 @@ with manual DevTools heap snapshots (automated CDP spec is stretch); pass = heap
 
 Canvas `role="img" aria-label="Battle arena"`. HUD: `<output aria-label="Score">`, `<time>`, health `role="meter"`.
 One `aria-live="polite"` region: score change, time at 60/30/10 s, health crossing 50/25 %, paused/resumed/ended; ≥ 1 s apart.
+As built: `ui/a11y/useMatchAnnouncer` diffs consecutive HUD snapshots, queues messages and writes them into the region's text
+directly (joined, at most one write per second; a repeated identical text gets a trailing no-break space so it is re-read), so
+announcements cause no React re-render. The end banner is `aria-hidden` because the region announces the end with the score.
+Every screen focuses its `<h1>` (`tabIndex=-1`) on arrival. HUD flash on `playerHit` (skipped under reduced motion); the
+health bar also shows "76 / 100" as in `sample.png`.
 Dialogs = native `<dialog>` + `showModal()` through one `GameDialog` (wood panel, title, actions); `cancel` event → resume on
 Pause and is ignored on Result (if the browser closes a dialog on its own, e.g. a non-cancelable Esc, it reopens while still
 wanted); focus returns to opener. Tab may leave the dialog for the browser toolbar (native modal behaviour, no keyboard trap).
@@ -614,8 +641,8 @@ Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A
 | M2 | 6 (4.5 + 1.5 of the day-1 buffer) | GameConfig, world/step, movement with accel/drag + collide-and-slide, islands + soft edge, open-sea fog (thickening to opaque beyond the rim), cannons array with cooldowns, swept shots, damage/scoring, border entries with arrival state, Chaser/Shooter AI, keyboard, over-ship bars, damage stages, explosion + wreck | Full keyboard match playable; enemies sail in through the fog; seeded run repeats under ManualClock |
 | M3 | 2 | Lifecycle, pause/auto-pause/resume, store + HUD, Pause dialog, minimal Result, abandon on route change (loop, RealClock, ManualClock and keyboard input with clear-on-blur already landed in M2). As built it also pulled the UI sprites and the `WoodPanel` / `GoldButton` / `RoundButton` primitives forward from M4, because the HUD, Pause dialog and Result use the pack's art | HUD updates on change only; blur pauses; held keys don't leak; Play Again resets |
 | CP1 | h14 | Day-1 buffer: 0.5 h left after M2's planned 1.5 h → M2 overrun first; stretch #1–2 move to day 2's buffer. If M2 runs long, cut in this order: fog gradient → plain darker band; arrival → fade-in at the entry; acceleration and slide stay. Public deploy: homelab clone, `docker compose up -d --build`, Caddy site `reverse_proxy` to the container on the subdomain | M0–M3 deployed over HTTPS on the subdomain: `mockServiceWorker.js` 200 as JavaScript with `no-cache`; `/result` loads directly and on reload; `document.body.dataset.mswReady === "true"`; footer SHA = `git rev-parse --short HEAD` |
-| M4 | 3.5 | Remaining primitives (Tabs, steppers), Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), Result status row, touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus | All screens usable by keyboard and touch; no clipping at 640×360 |
-| M5 | 3 | Contracts, Axios, queries, outbox, storage codec, handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
+| M4 | 3.5 | Remaining primitives (Tabs, steppers), Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus. As built: player name editing on the Menu (moved here from M5); the Result save-status row moved to M5 (it needs the outbox); the Log renders its empty state until M5 feeds it | All screens usable by keyboard and touch; no clipping at 640×360 |
+| M5 | 3 | Contracts, Axios, queries, outbox, storage codec (options/player part landed in M4), Result save-status row (moved from M4), handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
 | CP2 | h20.5 | If behind: M6 keeps 3.5 h, M7 shrinks to 1.5 h | Manual pass of every TEST-ID on the deployed build |
 | M6 | 3.5 | Test API, pbPage fixture, 12 spec files (order 01,03,04,06,07 → 02,05,08,09 → 10,11,12), 6 baselines, report + traces committed | `test:e2e` green twice locally, once in CI |
 | M7 | 2 | Perf run, memory check, REPORT.md, README, ARCHITECTURE.md (outline §21), licenses, tagged deploy | Clean clone runs dev/build/preview/lint/typecheck/test:e2e; deployed SHA = tag |

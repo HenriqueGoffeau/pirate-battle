@@ -1,0 +1,87 @@
+.stepper {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.label {
+  font: 700 16px / 1.3 system-ui, sans-serif;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 104px;
+  padding: 4px 0;
+  border-bottom: 2px solid rgb(243 233 210 / 35%);
+}
+
+.field:focus-within {
+  border-bottom-color: #e0b95a;
+}
+
+.field:has(.input:focus-visible) {
+  outline: 3px solid #f3e9d2;
+  outline-offset: 3px;
+}
+
+.field:has(.input[aria-invalid='true']) {
+  border-bottom-color: #f08a7a;
+}
+
+.input {
+  box-sizing: content-box;
+  min-width: 1ch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f3e9d2;
+  font: 800 26px / 1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.input:focus {
+  outline: none;
+}
+
+.unit {
+  font: 800 22px / 1 system-ui, sans-serif;
+}
+
+.limits {
+  margin: 0;
+  color: rgb(243 233 210 / 75%);
+  font: 600 12px / 1.3 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.error {
+  margin: 0;
+  color: #f08a7a;
+  font: 700 14px / 1.3 system-ui, sans-serif;
+}
+
+@media (max-height: 500px) {
+  .label {
+    font-size: 14px;
+  }
+
+  .input {
+    font-size: 22px;
+  }
+
+  .limits {
+    font-size: 11px;
+  }
+}

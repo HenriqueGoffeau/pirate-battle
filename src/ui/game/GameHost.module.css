@@ -68,15 +68,3 @@
   color: #f08a7a;
 }
 
-.status {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 12px;
-  margin: 0;
-  color: #f3e9d2;
-  font: 600 18px/1.4 system-ui, sans-serif;
-  text-align: center;
-}

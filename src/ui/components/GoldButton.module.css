@@ -4,8 +4,9 @@
   box-sizing: border-box;
   width: var(--button-width, 256px);
   aspect-ratio: 256 / 88;
-  padding: 0 12.7% 1%;
+  padding: 0 calc(var(--button-width, 256px) * 0.11) calc(var(--button-width, 256px) * 0.01);
   border: 0;
+  white-space: nowrap;
   border-radius: 28% / 60%;
   background: center / 100% 100% no-repeat;
   font: 800 calc(var(--button-width, 256px) * 0.086) / 1 system-ui, sans-serif;

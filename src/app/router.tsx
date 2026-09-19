@@ -1,10 +1,12 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import { GameRoute } from '../ui/game/GameRoute'
-import { Placeholder } from '../ui/screens/Placeholder'
+import { CaptainsLog } from '../ui/screens/CaptainsLog'
+import { Menu } from '../ui/screens/Menu'
+import { Options } from '../ui/screens/Options'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Placeholder name="Menu" /> },
-  { path: '/options', element: <Placeholder name="Options" /> },
+  { path: '/', element: <Menu /> },
+  { path: '/options', element: <Options /> },
   {
     element: <GameRoute />,
     children: [
@@ -12,6 +14,6 @@ export const router = createBrowserRouter([
       { path: '/result', element: null },
     ],
   },
-  { path: '/log', element: <Placeholder name="Captain's Log" /> },
+  { path: '/log', element: <CaptainsLog /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ])

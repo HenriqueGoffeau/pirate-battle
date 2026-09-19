@@ -9,13 +9,21 @@ import { captureFrame } from '../render/snapshot'
 import { createArenaStage, type ArenaStage } from '../render/stage'
 import { attachViewport, type Viewport } from '../render/viewport'
 import { RealClock, type Clock } from '../shared/clock'
+import type { CannonGroup } from '../config/gameConfig'
 import type { MapData } from '../shared/mapData'
-import type { World } from '../sim/entities'
+import type { Ship, World } from '../sim/entities'
 import { step } from '../sim/step'
 import { createWorld, playerOf } from '../sim/world'
 import { attachAutoPause, isPlayBlocked } from './lifecycle'
 import { startLoop } from './loop'
-import type { HudSnapshot, MatchResult, MatchState, SessionStore } from './store'
+import type {
+  HudSnapshot,
+  MatchResult,
+  MatchState,
+  SessionEventListener,
+  SessionEvents,
+  SessionStore,
+} from './store'
 
 export type GameSessionOptions = { matchConfig: MatchConfig; debugOverlay: boolean; clock?: Clock }
 
@@ -40,6 +48,9 @@ export class GameSession {
   private viewport: Viewport | null = null
   private stopLoop: (() => void) | null = null
   private detachGameplay: (() => void) | null = null
+  private readonly listeners = new Map<keyof SessionEvents, Set<(payload: never) => void>>()
+  private readonly readyAt: number[] = []
+  private readonly firedGroups = new Set<CannonGroup>()
 
   constructor(host: HTMLElement, store: SessionStore, options: GameSessionOptions) {
     this.host = host
@@ -88,12 +99,26 @@ export class GameSession {
     return this.endFrame
   }
 
+  on<K extends keyof SessionEvents>(event: K, listener: SessionEventListener<K>): () => void {
+    let set = this.listeners.get(event)
+    if (!set) {
+      set = new Set()
+      this.listeners.set(event, set)
+    }
+    const entry = listener as (payload: never) => void
+    set.add(entry)
+    return () => {
+      set.delete(entry)
+    }
+  }
+
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
     this.stopLoop?.()
     this.setGameplayListeners(false)
     this.input.clear()
+    this.listeners.clear()
     this.viewport?.detach()
     this.arena?.destroy()
     this.app?.destroy(true, { children: true, texture: false, textureSource: false })
@@ -165,10 +190,33 @@ export class GameSession {
   }
 
   private tick(world: World, dt: number): void {
+    const player = playerOf(world)
+    const health = player.health
+    const score = world.score
+    player.cannons.forEach((cannon, index) => {
+      this.readyAt[index] = cannon.readyAt
+    })
     step(world, dt, this.input.sample())
+    this.emitEdges(world, player, health, score)
     if (!world.ended) return
     this.publishHud(world)
     this.enter('ended', { endReason: world.endReason ?? undefined })
+  }
+
+  private emitEdges(world: World, player: Ship, health: number, score: number): void {
+    this.firedGroups.clear()
+    player.cannons.forEach((cannon, index) => {
+      const group = cannon.spec.group
+      if (cannon.readyAt === this.readyAt[index] || this.firedGroups.has(group)) return
+      this.firedGroups.add(group)
+      this.emit('weaponFired', { side: group, cooldownMs: cannon.spec.cooldown * 1000 })
+    })
+    if (player.health < health) this.emit('playerHit', { amount: health - Math.max(0, player.health) })
+    if (world.score > score) this.emit('enemyDestroyed', { score: world.score })
+  }
+
+  private emit<K extends keyof SessionEvents>(event: K, payload: SessionEvents[K]): void {
+    this.listeners.get(event)?.forEach((listener) => (listener as SessionEventListener<K>)(payload))
   }
 
   private frame(world: World, arena: ArenaStage, app: Application): void {

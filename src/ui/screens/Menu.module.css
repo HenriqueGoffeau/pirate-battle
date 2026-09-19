@@ -1,0 +1,191 @@
+.panel {
+  --button-width: 240px;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 8px 40px;
+  max-width: calc(100vw - 24px);
+}
+
+.primary {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.title {
+  width: 336px;
+  max-width: 100%;
+  aspect-ratio: 384 / 128;
+  margin: 0;
+  background: image-set(url('../sprites/title_pirate_battle.png') 1x, url('../sprites/title_pirate_battle@2x.png') 2x) center /
+    contain no-repeat;
+}
+
+.title:focus {
+  outline: none;
+}
+
+.tagline {
+  margin: 0 0 4px;
+  font: 700 12px / 1.3 system-ui, sans-serif;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+}
+
+.ship {
+  width: 33px;
+  height: 56px;
+  margin-top: 4px;
+  background: url('../sprites/ship_player.png') center / contain no-repeat;
+}
+
+.motto {
+  margin: 0;
+  font: 600 14px / 1.4 system-ui, sans-serif;
+}
+
+.log {
+  --button-width: 190px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.controls {
+  align-self: stretch;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding-left: 32px;
+  border-left: 2px solid rgb(243 233 210 / 15%);
+}
+
+.controlsTitle {
+  margin: 0;
+  font: 800 20px / 1.2 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table {
+  border-collapse: collapse;
+  font: 600 14px / 1.3 system-ui, sans-serif;
+}
+
+.table th[scope='row'] {
+  padding: 5px 16px 5px 0;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 5px 0;
+  white-space: nowrap;
+}
+
+.table tbody tr + tr {
+  border-top: 1px solid rgb(243 233 210 / 10%);
+}
+
+.table kbd {
+  display: inline-block;
+  min-width: 18px;
+  margin-right: 6px;
+  padding: 3px 7px;
+  border: 1px solid rgb(224 185 90 / 70%);
+  border-radius: 6px;
+  background: rgb(16 28 40 / 60%);
+  color: #e0b95a;
+  font: 800 12px / 1.2 system-ui, sans-serif;
+  text-align: center;
+}
+
+.touchNote {
+  max-width: 250px;
+  margin: 0;
+  color: rgb(243 233 210 / 75%);
+  font: 600 12px / 1.4 system-ui, sans-serif;
+}
+
+@media (max-width: 760px) and (min-height: 501px) {
+  .panel {
+    grid-template-columns: auto;
+  }
+
+  .controls {
+    justify-items: center;
+    padding: 12px 0 0;
+    border-top: 2px solid rgb(243 233 210 / 15%);
+    border-left: 0;
+  }
+}
+
+@media (max-height: 500px) {
+  .panel {
+    --button-width: 170px;
+    gap: 4px 24px;
+  }
+
+  .primary {
+    gap: 4px;
+  }
+
+  .title {
+    width: 220px;
+  }
+
+  .tagline {
+    font-size: 10px;
+  }
+
+  .actions {
+    grid-template-columns: auto auto;
+  }
+
+  .ship,
+  .motto {
+    display: none;
+  }
+
+  .log {
+    --button-width: 150px;
+    gap: 8px;
+  }
+
+  .controls {
+    gap: 4px;
+    padding-left: 20px;
+  }
+
+  .controlsTitle {
+    font-size: 15px;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  .table th[scope='row'],
+  .table td {
+    padding-block: 2px;
+  }
+
+  .table kbd {
+    padding: 1px 5px;
+    font-size: 11px;
+  }
+
+  .touchNote {
+    font-size: 11px;
+  }
+}

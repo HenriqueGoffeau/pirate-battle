@@ -86,9 +86,20 @@ function copyUiSprites(): void {
   console.log(`ui sprites: ${count} PNGs copied to ${spriteDir} (1x + @2x)`)
 }
 
+function copyMenuArt(): void {
+  const files: Array<[string, string]> = [
+    [join(sourceDir, 'ui_scene_background.png'), 'scene_background.png'],
+    [join(sourceDir, 'logo_jungle_gaming.svg'), 'logo_jungle_gaming.svg'],
+    [join(sourceDir, 'png', 'default', 'ships', 'ship_2.png'), 'ship_player.png'],
+  ]
+  for (const [source, target] of files) copyFileSync(source, join(spriteDir, target))
+  console.log(`menu art: ${files.map(([, target]) => target).join(', ')}`)
+}
+
 mkdirSync(targetDir, { recursive: true })
 convertShips()
 convertTiles('tiles_sheet.png', '', 1)
 convertTiles('tiles_sheet_retina.png', '@2x', 2)
 copyUi()
 copyUiSprites()
+copyMenuArt()

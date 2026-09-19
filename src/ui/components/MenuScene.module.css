@@ -1,0 +1,60 @@
+.scene {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  background: #1d4a63;
+}
+
+.scene::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url('../sprites/scene_background.png') center / cover no-repeat;
+  filter: saturate(0.8) brightness(0.72);
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-height: 100dvh;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+}
+
+.footer {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  left: max(16px, env(safe-area-inset-left, 0px));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.build {
+  color: rgb(243 233 210 / 70%);
+  font: 600 11px / 1 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.logo {
+  width: 120px;
+  height: auto;
+  opacity: 0.9;
+}
+
+@media (max-height: 500px) {
+  .main {
+    padding: max(6px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+      max(6px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  }
+
+  .logo {
+    width: 76px;
+  }
+}

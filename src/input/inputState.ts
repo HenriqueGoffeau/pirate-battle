@@ -1,5 +1,5 @@
 import { idleIntent, type ShipIntent } from '../shared/intent'
-import { actionFor, type Action } from './bindings'
+import { actionFor, type Action } from '../shared/bindings'
 
 export class InputState {
   private readonly keys = new Set<string>()

@@ -6,3 +6,11 @@
   padding: 12px 16px;
   color: #f3e9d2;
 }
+
+@media (max-height: 500px) {
+  .panel {
+    border-width: 28px 24px;
+    border-image-width: 28px 24px;
+    padding: 4px 10px;
+  }
+}

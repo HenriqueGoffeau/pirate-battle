@@ -1,3 +1,4 @@
+import type { CannonGroup } from '../config/gameConfig'
 import type { MatchConfig } from '../config/matchConfig'
 import type { EndReason } from '../sim/entities'
 
@@ -20,6 +21,14 @@ export type MatchResult = {
   matchConfig: MatchConfig
   seed: number
 }
+
+export type SessionEvents = {
+  weaponFired: { side: CannonGroup; cooldownMs: number }
+  playerHit: { amount: number }
+  enemyDestroyed: { score: number }
+}
+
+export type SessionEventListener<K extends keyof SessionEvents> = (payload: SessionEvents[K]) => void
 
 export type SessionStore = {
   getSnapshot(): HudSnapshot

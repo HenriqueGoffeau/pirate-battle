@@ -1,0 +1,57 @@
+.panel {
+  --button-width: 232px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(900px, calc(100vw - 24px));
+  text-align: center;
+}
+
+.title {
+  margin: 4px 0 0;
+  font: 800 36px / 1.1 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.title:focus {
+  outline: none;
+}
+
+.tabPanel {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.caption {
+  margin: 0;
+  font: 700 13px / 1.4 system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.menu {
+  margin-bottom: 6px;
+}
+
+@media (max-height: 500px) {
+  .panel {
+    --button-width: 170px;
+    gap: 4px;
+  }
+
+  .title {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  .caption {
+    font-size: 11px;
+  }
+
+  .menu {
+    margin-bottom: 0;
+  }
+}
