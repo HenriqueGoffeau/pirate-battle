@@ -7,7 +7,7 @@ combat, collision and enemy AI are hand-written rules in a pure TypeScript simul
 through a REST API mocked with MSW at the network layer, called with Axios and cached with TanStack Query. Playwright
 covers every graded flow end to end, including visual regression.
 
-**Live URL:** <LIVE_URL>
+**Live URL:** [<LIVE_URL>](https://pirate-battle.inrikg-dev.duckdns.org/)
 
 **Hosting choice.** The game is deployed as a self-hosted Docker image (nginx serving the static build) behind the
 author's Caddy reverse proxy on a dedicated subdomain, over HTTPS with a trusted certificate. This replaces Vercel,
