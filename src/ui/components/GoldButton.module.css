@@ -1,0 +1,55 @@
+.button {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--button-width, 256px);
+  aspect-ratio: 256 / 88;
+  padding: 0 12.7% 1%;
+  border: 0;
+  border-radius: 28% / 60%;
+  background: center / 100% 100% no-repeat;
+  font: 800 calc(var(--button-width, 256px) * 0.086) / 1 system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:focus-visible {
+  outline: 3px solid #f3e9d2;
+  outline-offset: 3px;
+}
+
+.primary {
+  background-image: image-set(url('../sprites/button_primary_normal.png') 1x, url('../sprites/button_primary_normal@2x.png') 2x);
+  color: #1f2a38;
+}
+
+.primary:hover {
+  background-image: image-set(url('../sprites/button_primary_hover.png') 1x, url('../sprites/button_primary_hover@2x.png') 2x);
+}
+
+.primary:active {
+  background-image: image-set(url('../sprites/button_primary_pressed.png') 1x, url('../sprites/button_primary_pressed@2x.png') 2x);
+}
+
+.primary:disabled {
+  background-image: image-set(
+    url('../sprites/button_primary_disabled.png') 1x,
+    url('../sprites/button_primary_disabled@2x.png') 2x
+  );
+  color: rgb(31 42 56 / 55%);
+  cursor: default;
+}
+
+.secondary {
+  background-image: image-set(url('../sprites/button_secondary_normal.png') 1x, url('../sprites/button_secondary_normal@2x.png') 2x);
+  color: #f3e9d2;
+}
+
+.secondary:active {
+  background-image: image-set(
+    url('../sprites/button_secondary_pressed.png') 1x,
+    url('../sprites/button_secondary_pressed@2x.png') 2x
+  );
+}

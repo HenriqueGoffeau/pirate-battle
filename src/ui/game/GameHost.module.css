@@ -40,6 +40,34 @@
   color: #ffd23f;
 }
 
+.backdrop {
+  min-height: 100dvh;
+  background: radial-gradient(ellipse at 50% 40%, #2f7ea6, #174262 75%) center / cover no-repeat;
+}
+
+.banner {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 14px 32px;
+  border-radius: 14px;
+  background: rgb(16 28 40 / 78%);
+  color: #f3e9d2;
+  font: 800 clamp(22px, 4vw, 40px) / 1.2 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.defeated {
+  color: #f08a7a;
+}
+
 .status {
   position: absolute;
   inset: 0;

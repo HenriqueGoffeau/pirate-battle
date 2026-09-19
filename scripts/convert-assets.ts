@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 type Rect = { x: number; y: number; w: number; h: number }
@@ -6,6 +6,8 @@ type Frames = Record<string, { frame: Rect }>
 
 const sourceDir = 'assets'
 const targetDir = join('public', 'assets')
+const spriteDir = join('src', 'ui', 'sprites')
+const uiGroups = ['controls', 'hud', 'menu']
 const tileSize = 64
 const tileColumns = 16
 const tileRows = 6
@@ -64,8 +66,29 @@ function copyUi(): void {
   console.log('ui_sheet: copied 1x and 2x unchanged')
 }
 
+function copyUiSprites(): void {
+  mkdirSync(spriteDir, { recursive: true })
+  let count = 0
+  for (const group of uiGroups) {
+    const normalDir = join(sourceDir, 'png', 'default', 'ui', group)
+    const retinaDir = join(sourceDir, 'png', 'retina', 'ui', group)
+    for (const file of readdirSync(normalDir).filter((name) => name.endsWith('.png'))) {
+      const normal = pngSize(join(normalDir, file))
+      const retina = pngSize(join(retinaDir, file))
+      if (retina.w !== normal.w * 2 || retina.h !== normal.h * 2) {
+        throw new Error(`${group}/${file}: retina ${retina.w}x${retina.h} is not twice ${normal.w}x${normal.h}`)
+      }
+      copyFileSync(join(normalDir, file), join(spriteDir, file))
+      copyFileSync(join(retinaDir, file), join(spriteDir, file.replace(/\.png$/, '@2x.png')))
+      count++
+    }
+  }
+  console.log(`ui sprites: ${count} PNGs copied to ${spriteDir} (1x + @2x)`)
+}
+
 mkdirSync(targetDir, { recursive: true })
 convertShips()
 convertTiles('tiles_sheet.png', '', 1)
 convertTiles('tiles_sheet_retina.png', '@2x', 2)
 copyUi()
+copyUiSprites()

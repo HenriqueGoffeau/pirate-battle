@@ -29,10 +29,11 @@ Core gameplay and Pixi lifecycle come first; polish is last and optional.
 | Fire behavior | Hold to fire at cooldown rate (level-triggered). Cooldown sweep on fire buttons via one CSS animation per shot |
 | Ship contact | Chaser↔player: damage + chaser self-destructs (no score). Shooter↔player: push apart, no damage; Shooter AI keeps a standoff distance. Enemy↔enemy: **pushed apart half each** (added after play-test: enemies stacked in lanes) plus separation steering. No friendly fire |
 | Health | 100, no regeneration, no pickups |
-| Pause | Manual (P/Esc) + auto on blur / hidden / portrait. Resume by button (no countdown unless stretch). Input cleared on pause/blur/resume/dispose |
+| Pause | Manual (P, Esc or the HUD pause button) + auto on blur / hidden / portrait. Portrait means `(orientation: portrait) and (pointer: coarse)`: only touch devices, so a tall desktop window keeps playing. Resume by the Resume button, P or Esc (no countdown unless stretch). A key held through a pause must be pressed again after resuming (auto-repeat is ignored). Input cleared on every lifecycle change and on dispose |
 | Pause → Options | Does not exist. Pause dialog = Resume / Main Menu |
+| Match end | The sim stops at once (MR-04); the frozen arena shows a banner for 1.2 s ("Time's up!" or "Your ship was sunk!"), then the **Result dialog opens over the frozen match**, like Pause (not a separate page: a page of its own is only worth it if it showed the history). Surviving until time runs out is a win: Result headline "You survived the attack" (caption `TIME'S UP` in green); defeat: "Your ship was sunk" (`DEFEATED` in #F08A7A) |
 | Mobile | Landscape only; portrait shows a rotate overlay and auto-pauses. On wide phones the arena leaves fog zones left and right; the touch buttons (M4) sit there, so thumbs never cover the playable water |
-| Routing | Real URLs `/`, `/options`, `/play`, `/result`, `/log`. Reload on `/play` → menu (match abandoned, never recorded). Reload on `/result` → last result from local storage |
+| Routing | Real URLs `/`, `/options`, `/play`, `/result`, `/log`. Reload on `/play` → menu (match abandoned, never recorded, CFG-06). A match starts only from an in-app navigation: any POP onto `/play` (reload, typed URL, Back/Forward) redirects to the menu, except with `?dev=1` so the map-editing reload loop keeps working. Game → Result, Pause → Main Menu and both Result buttons replace the history entry, so Back never lands on a finished match. `/play` and `/result` are children of one pathless layout route (`GameRoute`), so the frozen match stays mounted when the URL changes to `/result`. Reload on `/result` → the same Result dialog over a **snapshot of the battle's final frame** (the match itself is gone, CFG-06), from the router history state in M3 and local storage from M5; a fresh tab (no history entry) gets a plain sea gradient |
 | Audio | Out of scope |
 | Pending display | Result screen status row + menu badge. History shows confirmed rows only |
 | Dates | `08 SEP · 21:42`, local time, en-GB month abbreviations |
@@ -78,7 +79,8 @@ src/
   app/        main.tsx (startMsw → flushOutbox → render), router.tsx, providers.tsx
   config/     gameConfig.ts, userOptions.ts (limits, validate), matchConfig.ts (snapshot, configKey, custom)
   shared/     clock.ts (Clock, RealClock, ManualClock), rng.ts (mulberry32), storage.ts, uuid.ts, math.ts,
-              mapData.ts (MapData, MapSource types: shared because assets implements MapSource and may import only shared)
+              mapData.ts (MapData, MapSource types: shared because assets implements MapSource and may import only shared),
+              format.ts (formatClock mm:ss)
   sim/        entities.ts (types), world.ts (createWorld, createShip, hull circles, effects, damageStage), grid.ts (solid
               mask, rounded island corners, island bounds, DDA raycast, circle push-out), step.ts,
               systems/ (ai, movement, weapons, projectiles, collision, damage, spawn, lifecycle = cleanup + effects + endCheck)
@@ -90,8 +92,9 @@ src/
   data/       contracts/, http.ts, api.ts, queries.ts, outbox.ts, local.ts
   mocks/      handlers.ts, fixtures.ts, scenarios.ts, fakeDb.ts, browser.ts
   testing/    testApi.ts
-  ui/         screens/ (Menu, Options, Play, Result, CaptainsLog), game/ (GameHost, Hud, TouchControls, PauseDialog),
-              components/ (WoodPanel, GoldButton, RoundButton, Tabs), a11y/ (LiveRegion), dev/ (DevPanel)
+  ui/         screens/ (Menu, Options, CaptainsLog), game/ (GameRoute = /play + /result layout, GameHost, Hud, TouchControls,
+              PauseDialog, ResultDialog), components/ (WoodPanel, GoldButton, RoundButton, GameDialog, Tabs), a11y/ (LiveRegion), dev/ (DevPanel),
+              sprites/ (UI PNGs copied by convert-assets, name.png + name@2x.png, used from CSS modules)
 public/       mockServiceWorker.js, assets/ (ships, tiles, tiles@2x, ui_sheet, ui_sheet_retina: JSON + PNG), maps/archipelago-1.json
 scripts/      convert-assets.ts (Sparrow XML → Pixi JSON; tile grid → JSON 1×/2×; UI sheet copied), build-map.ts +
               maps/archipelago-1.txt (authored layout), perf.spec.ts, memory.spec.ts. Output under public/ is committed.
@@ -107,7 +110,7 @@ unhashed files copied from `public/assets/` (`/assets/*`, revalidated).
 
 ## 3. React ↔ PixiJS bridge (ARCH-01/04/08/09)
 
-- The `/play` route renders `ui/game/GameRoute`, which loads `GameHost` with `React.lazy` inside `Suspense` (fallback: the same
+- The `/play` and `/result` routes share the layout `ui/game/GameRoute`, which loads `GameHost` with `React.lazy` inside `Suspense` (fallback: the same
   "Loading the fleet…" status). Everything that imports `pixi.js` sits behind that boundary, so the menu, Options and Captain's
   Log never download Pixi (build: `index` ≈ 315 kB with React + router, `GameHost` ≈ 256 kB with Pixi + session; no chunk-size
   warning). Nothing outside `ui/game/GameHost` and below may import `session`, `render` or `assets` statically.
@@ -396,12 +399,33 @@ Enemies use the same `movementSystem` as the player; AI writes intents only.
 ## 9. Match lifecycle (MR-*, CFG-06)
 
 States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused → resuming → running → ended{timeUp|defeated} → disposed`.
-- Only `running` steps the sim; others repaint.
-- Pause triggers: P/Esc, `blur`, `visibilitychange`, `(orientation: portrait)`. Listeners attached only in `running`/`resuming`.
-- Resume = button click → `resuming` (one frame without countdown) → `input.clear()` → `running`.
+- Only `running` steps the sim; others repaint. `GameSession` owns the state; every change goes through one `enter(state)` that
+  attaches the gameplay listeners (keyboard + auto-pause) only for `running`/`resuming`, clears input, and publishes `matchState`.
+- `ready` lasts one frame (stage built, first frame drawn, no step); `resuming` likewise. Both then enter `running`, or `paused`
+  if play is blocked (`document.hidden` or touch portrait), so resuming in portrait stays paused.
+- Pause triggers (`session/lifecycle.ts`): P/Esc keydown (non-repeat), the HUD pause button, window `blur`, `visibilitychange` to
+  hidden, and the portrait query turning true. Resume = the dialog's Resume button, P, or Esc (the native `<dialog>` `cancel`).
+  The dialog swallows auto-repeated Esc/P and stops P from reaching the window listeners that `resuming` attaches during the same
+  event, so holding either key never flips paused → running → paused.
 - `ended` entered from `endCheck`; `getResult()` returns `{ score, effectiveSec: floor(w.time), endReason, matchConfig, seed }` once.
-- Main Menu / route change / reload during any state → dispose, nothing recorded.
-- Play Again → new `MatchConfig` snapshot + new seed → new session.
+  `GameHost` takes it when `ended` is published, shows the end banner for 1.2 s, then `navigate('/result', { replace, state })`.
+  `GameRoute` keys `GameHost` by the `location.key` of the last `/play` entry, so on `/result` the same `GameHost` (and its ended
+  session, arena and HUD) stays mounted under the `ResultDialog`; Play Again replaces to `/play`, whose new key remounts a fresh
+  `GameHost`. Leaving the layout (menu, Back) unmounts it and disposes the session. On a fresh load of `/result` there is no
+  match to show, so the dialog sits on a snapshot of the final frame: right after the first `ended` frame is rendered, the
+  session copies the WebGL canvas (same task, so the drawing buffer is still intact without `preserveDrawingBuffer`) onto a 2D
+  canvas ≤ 1280 px wide and keeps it as a JPEG data URL (q 0.72, ≈ 170 kB at 1280×720; `render/snapshot.ts`). `GameHost` sends
+  it as `state.endFrame` with the result; `GameRoute` accepts only a `data:image/jpeg;base64` string and shows it `cover`ed
+  under the dialog's dimmed backdrop. It stays in the history entry only (not in local storage, even from M5), so a new tab on
+  `/result` falls back to the sea gradient. Until M5 the result travels in the router's history state (survives a
+  reload of `/result`; a fresh tab shows "No battle yet"); M5 writes `pb:v1:lastResult` + the outbox item first (§14).
+- Main Menu / route change / reload during any state → dispose, nothing recorded (CFG-06). A POP onto `/play` redirects to `/`.
+- Play Again → new `MatchConfig` snapshot + new seed → new session (a new `GameHost` mount with a fresh store).
+- Verified at M3 (headless Chromium, dev Strict Mode): window `keydown`/`keyup`/`blur` and document `visibilitychange` listeners
+  are 1 each while running, 0 while paused/ended and after leaving; world time identical across 2.5 s of pause; W held through a
+  pause gives speed 0 after resume until pressed again; Space after a mouse pause/resume fires and does not re-trigger the focused
+  pause button; the HUD DOM changed 6 times in 3 s of play (≈ 120 frames); on `/result` the ended session and its canvas stay
+  mounted under the Result dialog, Esc does not close it, and a reload shows the same result over the final-frame snapshot (48 checks).
 
 ## 10. Assets (ARCH-05, A11Y-04)
 
@@ -422,6 +446,15 @@ States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused →
   per the sheet's `fill_rect`/`clip_axis`: a `dynamic` texture whose `frame.width` and `orig.width` shrink together. Pixi 8
   sprites size themselves from `orig` and only listen to texture updates when the texture is `dynamic`; changing only `frame`
   stretches the fill instead (found at M2).
+- React UI art (M3): `convert-assets` copies every UI PNG of the pack (`png/default/ui/{controls,hud,menu}` and the retina
+  twins, checked to be exactly 2×) into `src/ui/sprites/` as `name.png` + `name@2x.png`. CSS modules reference them with
+  `image-set(url(name.png) 1x, url(name@2x.png) 2x)`, so Vite hashes them into `/static/` (immutable) and inlines files under
+  4 kB; a sprite downloads only when a rule using it matches. The Docker build context excludes the source pack, hence the copy.
+  Primitives: `WoodPanel` = `panel_menu` as a 9-slice `border-image` (insets 40/32 px = 8.33 % of the image); `GoldButton` keeps
+  the 256:88 sprite ratio with normal/hover/pressed/disabled states (secondary = navy variant); `RoundButton` = 64 px round sprite
+  with a 32 px icon (≥ 56 px visible). HUD: `icon_heart` + `health_frame` with `health_fill_*` clipped to `fill_rect` by
+  `clip-path` (green > 50 %, amber > 25 %, red below), `counter_panel` + `icon_score` / `icon_time`; scale 0.75, 0.6 when the
+  viewport is ≤ 500 px tall.
 - Tests simulate failure via Playwright **`context.route`**`('**/ships.json', route => route.abort())`. `page.route` does not work
   here: once MSW's service worker controls the page, asset fetches are re-issued by the worker, and only `context.route`
   intercepts service-worker traffic in Chromium (found at M1). The same applies to any request-level interception in E2E.
@@ -448,7 +481,11 @@ sample(): Intents = { thrust: 0|1, turn: -1|0|1, fire: { front, left, right } } 
 clear(): on pause, blur, hidden, resume, dispose
 ```
 
-Keyboard listeners on `window` only while `running`/`resuming`. Touch layer: six `<button>`s with pointer events, `setPointerCapture`,
+Keyboard listeners on `window` only while `running`/`resuming` (A11Y-07). As built: `attachKeyboard(input, onPause)`; keydown
+with Ctrl/Meta/Alt is ignored (browser shortcuts such as Ctrl+P stay the browser's); the pause action fires on a non-repeat
+keydown and is not a held key; blur handling lives in `session/lifecycle.ts` (blur → pause, which clears input). Because
+repeats are ignored and listeners are detached while paused, a key held across a pause stays inert until pressed again (MR-10).
+Touch layer: six `<button>`s with pointer events, `setPointerCapture`,
 `pointercancel`/`lostpointercapture` release, `touch-action: none`. Menu renders the controls table from `bindings`.
 
 ## 13. Data contracts and API (API-*)
@@ -559,7 +596,11 @@ with manual DevTools heap snapshots (automated CDP spec is stretch); pass = heap
 
 Canvas `role="img" aria-label="Battle arena"`. HUD: `<output aria-label="Score">`, `<time>`, health `role="meter"`.
 One `aria-live="polite"` region: score change, time at 60/30/10 s, health crossing 50/25 %, paused/resumed/ended; ≥ 1 s apart.
-Dialogs = native `<dialog>` + `showModal()`; `cancel` event → resume; focus returns to opener. Real `<button>`s with sprite
+Dialogs = native `<dialog>` + `showModal()` through one `GameDialog` (wood panel, title, actions); `cancel` event → resume on
+Pause and is ignored on Result (if the browser closes a dialog on its own, e.g. a non-cancelable Esc, it reopens while still
+wanted); focus returns to opener. Tab may leave the dialog for the browser toolbar (native modal behaviour, no keyboard trap).
+The focused button inside a dialog always shows the ring (`:focus`, not `:focus-visible`): Chrome did not treat a keyboard P/Esc
+pause as keyboard modality, so the ring appeared only after Tab (found at M3). Real `<button>`s with sprite
 backgrounds; `:focus-visible` 3 px cream outline offset 3 px. Options: `role="group"`, `<output>` value, visible limits text,
 errors `role="alert"` + `aria-describedby`. Tables: `<th scope>`, YOU row `aria-current`. `prefers-reduced-motion` disables HUD flash.
 Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A ≈ 7.9:1; DEFEATED tint #F08A7A.
@@ -571,9 +612,9 @@ Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A
 | M0 | 1.5 | Vite/React/TS strict, layer folders + lint boundaries, Playwright/Vitest installed, MSW worker file, Dockerfile + nginx.conf + compose | Local Docker image verified on `localhost:8080`: extensionless paths fall back to the app, `/result` reload works, `mockServiceWorker.js` returns 200 as JavaScript with `no-cache`, a missing asset is a 404, `/static/*` is immutable, `body[data-msw-ready]` set, console clean. Public deploy is deferred to CP1 |
 | M1 | 4 | Atlas conversion, tile probe, Tiled map + loader, ensureLoaded with progress/error, GameSession skeleton (Strict-Mode-safe), static tiles, one ship, sea beyond the arena (no bars)/DPR | Arena renders on desktop + phone; mount/unmount/mount leaves one canvas, zero listeners |
 | M2 | 6 (4.5 + 1.5 of the day-1 buffer) | GameConfig, world/step, movement with accel/drag + collide-and-slide, islands + soft edge, open-sea fog (thickening to opaque beyond the rim), cannons array with cooldowns, swept shots, damage/scoring, border entries with arrival state, Chaser/Shooter AI, keyboard, over-ship bars, damage stages, explosion + wreck | Full keyboard match playable; enemies sail in through the fog; seeded run repeats under ManualClock |
-| M3 | 2 | Lifecycle, pause/auto-pause/resume, store + HUD, Pause dialog, minimal Result, abandon on route change (loop, RealClock, ManualClock and keyboard input with clear-on-blur already landed in M2) | HUD updates on change only; blur pauses; held keys don't leak; Play Again resets |
+| M3 | 2 | Lifecycle, pause/auto-pause/resume, store + HUD, Pause dialog, minimal Result, abandon on route change (loop, RealClock, ManualClock and keyboard input with clear-on-blur already landed in M2). As built it also pulled the UI sprites and the `WoodPanel` / `GoldButton` / `RoundButton` primitives forward from M4, because the HUD, Pause dialog and Result use the pack's art | HUD updates on change only; blur pauses; held keys don't leak; Play Again resets |
 | CP1 | h14 | Day-1 buffer: 0.5 h left after M2's planned 1.5 h → M2 overrun first; stretch #1–2 move to day 2's buffer. If M2 runs long, cut in this order: fog gradient → plain darker band; arrival → fade-in at the entry; acceleration and slide stay. Public deploy: homelab clone, `docker compose up -d --build`, Caddy site `reverse_proxy` to the container on the subdomain | M0–M3 deployed over HTTPS on the subdomain: `mockServiceWorker.js` 200 as JavaScript with `no-cache`; `/result` loads directly and on reload; `document.body.dataset.mswReady === "true"`; footer SHA = `git rev-parse --short HEAD` |
-| M4 | 3.5 | Wood/gold primitives, Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), Result status row, touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus | All screens usable by keyboard and touch; no clipping at 640×360 |
+| M4 | 3.5 | Remaining primitives (Tabs, steppers), Menu (controls table), Options (steppers, validate, Save), Captain's Log shell (6 states), Result status row, touch layer + sweep, portrait overlay, loading/error screens, dialogs, live region, focus | All screens usable by keyboard and touch; no clipping at 640×360 |
 | M5 | 3 | Contracts, Axios, queries, outbox, storage codec, handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
 | CP2 | h20.5 | If behind: M6 keeps 3.5 h, M7 shrinks to 1.5 h | Manual pass of every TEST-ID on the deployed build |
 | M6 | 3.5 | Test API, pbPage fixture, 12 spec files (order 01,03,04,06,07 → 02,05,08,09 → 10,11,12), 6 baselines, report + traces committed | `test:e2e` green twice locally, once in CI |

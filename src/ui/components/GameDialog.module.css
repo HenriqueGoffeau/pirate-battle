@@ -1,0 +1,60 @@
+.dialog {
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
+}
+
+.dialog::backdrop {
+  background: rgb(16 28 40 / 45%);
+}
+
+.dialog :focus {
+  outline: 3px solid #f3e9d2;
+  outline-offset: 3px;
+}
+
+.panel {
+  --button-width: 232px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(440px, calc(100vw - 16px));
+  text-align: center;
+}
+
+.title {
+  margin: 8px 0 0;
+  font: 800 40px / 1.1 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.actions {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+@media (max-height: 500px) {
+  .panel {
+    --button-width: 180px;
+    gap: 4px;
+    padding-block: 4px;
+  }
+
+  .title {
+    margin-top: 0;
+    font-size: 28px;
+  }
+
+  .actions {
+    gap: 4px;
+    padding-bottom: 0;
+  }
+}

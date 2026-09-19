@@ -5,15 +5,17 @@ import type { MatchConfig } from '../config/matchConfig'
 import { InputState } from '../input/inputState'
 import { attachKeyboard } from '../input/keyboard'
 import { createDebugOverlay } from '../render/debugOverlay'
+import { captureFrame } from '../render/snapshot'
 import { createArenaStage, type ArenaStage } from '../render/stage'
 import { attachViewport, type Viewport } from '../render/viewport'
 import { RealClock, type Clock } from '../shared/clock'
 import type { MapData } from '../shared/mapData'
 import type { World } from '../sim/entities'
 import { step } from '../sim/step'
-import { createWorld } from '../sim/world'
+import { createWorld, playerOf } from '../sim/world'
+import { attachAutoPause, isPlayBlocked } from './lifecycle'
 import { startLoop } from './loop'
-import type { SessionStore } from './store'
+import type { HudSnapshot, MatchResult, MatchState, SessionStore } from './store'
 
 export type GameSessionOptions = { matchConfig: MatchConfig; debugOverlay: boolean; clock?: Clock }
 
@@ -29,12 +31,15 @@ export class GameSession {
   private readonly clock: Clock
   private disposed = false
   private starting = false
-  private running = false
+  private state: MatchState = 'loading'
+  private resultTaken = false
+  private endFrame: string | null = null
+  private world: World | null = null
   private app: Application | null = null
   private arena: ArenaStage | null = null
   private viewport: Viewport | null = null
   private stopLoop: (() => void) | null = null
-  private detachKeyboard: (() => void) | null = null
+  private detachGameplay: (() => void) | null = null
 
   constructor(host: HTMLElement, store: SessionStore, options: GameSessionOptions) {
     this.host = host
@@ -55,28 +60,53 @@ export class GameSession {
   }
 
   retry(): void {
-    if (this.store.getSnapshot().matchState === 'assetError') void this.start()
+    if (this.state === 'assetError') void this.start()
+  }
+
+  pause(): void {
+    if (!this.disposed && (this.state === 'running' || this.state === 'resuming')) this.enter('paused')
+  }
+
+  resume(): void {
+    if (!this.disposed && this.state === 'paused') this.enter('resuming')
+  }
+
+  getResult(): MatchResult | null {
+    const world = this.world
+    if (this.state !== 'ended' || this.resultTaken || !world?.endReason) return null
+    this.resultTaken = true
+    return {
+      score: world.score,
+      effectiveSec: Math.floor(world.time),
+      endReason: world.endReason,
+      matchConfig: this.matchConfig,
+      seed: this.matchConfig.seed,
+    }
+  }
+
+  getEndFrame(): string | null {
+    return this.endFrame
   }
 
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.running = false
     this.stopLoop?.()
-    this.detachKeyboard?.()
+    this.setGameplayListeners(false)
     this.input.clear()
     this.viewport?.detach()
     this.arena?.destroy()
     this.app?.destroy(true, { children: true, texture: false, textureSource: false })
     this.stopLoop = null
-    this.detachKeyboard = null
     this.viewport = null
     this.arena = null
     this.app = null
+    this.world = null
+    this.endFrame = null
   }
 
   private async boot(): Promise<void> {
-    this.store.publish({ matchState: 'loading', loadProgress: 0 })
+    this.enter('loading', { loadProgress: 0 })
     let assets: CombatAssets
     let map: MapData
     const app = new Application()
@@ -95,7 +125,7 @@ export class GameSession {
         eventFeatures: { move: false, globalMove: false, click: false, wheel: false },
       })
     } catch {
-      if (!this.disposed) this.store.publish({ matchState: 'assetError' })
+      if (!this.disposed) this.enter('assetError')
       return
     }
     if (this.disposed) {
@@ -116,6 +146,7 @@ export class GameSession {
     })
     if (this.debugOverlay) arena.root.addChild(createDebugOverlay(map, { edgeBand: arenaConfig.edgeBand }))
     app.stage.addChild(arena.root)
+    this.world = world
     this.arena = arena
     this.viewport = attachViewport(
       this.host,
@@ -124,23 +155,62 @@ export class GameSession {
       { width: world.width, height: world.height },
       () => app.render(),
     )
-    this.detachKeyboard = attachKeyboard(this.input)
-    this.running = true
+    this.publishHud(world)
+    this.enter('ready', { loadProgress: 1 })
     this.stopLoop = startLoop(this.clock, {
-      isRunning: () => this.running,
+      isRunning: () => this.state === 'running',
       step: (dt) => this.tick(world, dt),
-      render: () => {
-        arena.draw(world)
-        app.render()
-      },
+      render: () => this.frame(world, arena, app),
     })
-    this.store.publish({ matchState: 'running', loadProgress: 1 })
   }
 
   private tick(world: World, dt: number): void {
     step(world, dt, this.input.sample())
     if (!world.ended) return
-    this.running = false
-    this.store.publish({ matchState: 'ended', endReason: world.endReason ?? undefined })
+    this.publishHud(world)
+    this.enter('ended', { endReason: world.endReason ?? undefined })
+  }
+
+  private frame(world: World, arena: ArenaStage, app: Application): void {
+    if (this.state === 'ready' || this.state === 'resuming') this.enter(isPlayBlocked() ? 'paused' : 'running')
+    arena.draw(world)
+    app.render()
+    if (this.state === 'ended' && this.endFrame === null) {
+      this.endFrame = captureFrame(app.canvas, app.screen.width, app.screen.height)
+    }
+    this.publishHud(world)
+  }
+
+  private enter(state: MatchState, patch: Partial<HudSnapshot> = {}): void {
+    this.state = state
+    this.setGameplayListeners(state === 'running' || state === 'resuming')
+    this.input.clear()
+    this.store.publish({ ...patch, matchState: state })
+  }
+
+  private setGameplayListeners(active: boolean): void {
+    if (active === (this.detachGameplay !== null)) return
+    if (!active) {
+      this.detachGameplay?.()
+      this.detachGameplay = null
+      return
+    }
+    const pause = () => this.pause()
+    const detachKeyboard = attachKeyboard(this.input, pause)
+    const detachAutoPause = attachAutoPause(pause)
+    this.detachGameplay = () => {
+      detachKeyboard()
+      detachAutoPause()
+    }
+  }
+
+  private publishHud(world: World): void {
+    const player = playerOf(world)
+    this.store.publish({
+      score: world.score,
+      timeLeftSec: Math.max(0, Math.ceil(world.config.sessionSeconds - world.time - 1e-6)),
+      health: Math.max(0, Math.ceil(player.health)),
+      maxHealth: player.spec.maxHealth,
+    })
   }
 }

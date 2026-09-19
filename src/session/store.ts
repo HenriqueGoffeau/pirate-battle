@@ -1,13 +1,24 @@
+import type { MatchConfig } from '../config/matchConfig'
+import type { EndReason } from '../sim/entities'
+
 export type MatchState = 'loading' | 'assetError' | 'ready' | 'running' | 'paused' | 'resuming' | 'ended'
 
 export type HudSnapshot = {
   matchState: MatchState
-  endReason?: 'timeUp' | 'defeated'
+  endReason?: EndReason
   score: number
   timeLeftSec: number
   health: number
   maxHealth: number
   loadProgress: number
+}
+
+export type MatchResult = {
+  score: number
+  effectiveSec: number
+  endReason: EndReason
+  matchConfig: MatchConfig
+  seed: number
 }
 
 export type SessionStore = {

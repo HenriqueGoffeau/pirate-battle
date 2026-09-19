@@ -1,0 +1,110 @@
+.hud {
+  --hud-scale: 0.75;
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  right: calc(env(safe-area-inset-right, 0px) + 8px);
+  left: calc(env(safe-area-inset-left, 0px) + 8px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(10px * var(--hud-scale));
+}
+
+.health {
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  flex: none;
+  width: calc(36px * var(--hud-scale));
+  height: calc(36px * var(--hud-scale));
+  background: center / contain no-repeat;
+}
+
+.heart {
+  width: calc(44px * var(--hud-scale));
+  height: calc(44px * var(--hud-scale));
+  margin-right: calc(-6px * var(--hud-scale));
+  position: relative;
+  z-index: 1;
+  background-image: image-set(url('../sprites/icon_heart.png') 1x, url('../sprites/icon_heart@2x.png') 2x);
+}
+
+.score {
+  background-image: image-set(url('../sprites/icon_score.png') 1x, url('../sprites/icon_score@2x.png') 2x);
+}
+
+.time {
+  background-image: image-set(url('../sprites/icon_time.png') 1x, url('../sprites/icon_time@2x.png') 2x);
+}
+
+.bar {
+  position: relative;
+  width: calc(256px * var(--hud-scale));
+  height: calc(48px * var(--hud-scale));
+  background: image-set(url('../sprites/health_frame.png') 1x, url('../sprites/health_frame@2x.png') 2x) center / 100% 100% no-repeat;
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  background: center / 100% 100% no-repeat;
+}
+
+.green {
+  background-image: image-set(url('../sprites/health_fill_green.png') 1x, url('../sprites/health_fill_green@2x.png') 2x);
+}
+
+.amber {
+  background-image: image-set(url('../sprites/health_fill_amber.png') 1x, url('../sprites/health_fill_amber@2x.png') 2x);
+}
+
+.red {
+  background-image: image-set(url('../sprites/health_fill_red.png') 1x, url('../sprites/health_fill_red@2x.png') 2x);
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: calc(160px * var(--hud-scale));
+  height: calc(56px * var(--hud-scale));
+  padding: 0 calc(16px * var(--hud-scale)) calc(2px * var(--hud-scale));
+  background: image-set(url('../sprites/counter_panel.png') 1x, url('../sprites/counter_panel@2x.png') 2x) center / 100% 100% no-repeat;
+}
+
+.value {
+  flex: 1;
+  color: #f3e9d2;
+  font: 800 calc(26px * var(--hud-scale)) / 1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.pause {
+  pointer-events: auto;
+}
+
+@media (max-height: 500px) {
+  .hud {
+    --hud-scale: 0.6;
+  }
+
+  .pause {
+    width: 56px;
+    height: 56px;
+  }
+
+  .pause::after {
+    inset: 14px;
+  }
+}
