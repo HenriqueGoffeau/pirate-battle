@@ -1,0 +1,1681 @@
+{
+  "meta": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+    "devicePixelRatio": 1,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "canvas": {
+      "width": 1920,
+      "height": 1080
+    },
+    "renderer": "webgl",
+    "gpu": "ANGLE (AMD, AMD Radeon RX 9060 XT (0x00007590) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "commit": "1335559",
+    "createdAt": "2026-09-19T04:30:08.369Z",
+    "browser": {
+      "name": "chromium",
+      "version": "153.0.8010.12",
+      "headless": false
+    },
+    "balanceOverride": {
+      "player.maxHealth": {
+        "value": 100000,
+        "default": 100
+      }
+    },
+    "bot": {
+      "pattern": "W held except 0.6 s of every 12 s; a 1.3 s turn every 5 s (right, right, left); Space held 3 s of every 4 s; Q and E held 0.4 s every 3 s, 1.5 s apart",
+      "autoResumes": 0
+    },
+    "consoleErrors": []
+  },
+  "config": {
+    "sessionSeconds": 180,
+    "spawnIntervalSec": 1,
+    "configKey": "s180-i1",
+    "seed": 1052498554,
+    "custom": true
+  },
+  "summary": {
+    "frames": 43197,
+    "durationSec": 180,
+    "meanFps": 239.98,
+    "p50Ms": 4.2,
+    "p95Ms": 4.3,
+    "p99Ms": 4.3,
+    "maxMs": 12.5,
+    "over20Ms": 0,
+    "over33Ms": 0,
+    "peakShips": 7,
+    "peakShots": 9,
+    "peakFx": 10,
+    "heapStartMB": 12,
+    "heapEndMB": 15.3,
+    "heapPeakMB": 17,
+    "endReason": "timeUp"
+  },
+  "samples": [
+    {
+      "t": 1,
+      "fps": 238,
+      "p95": 4.3,
+      "ships": 2,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 11.6
+    },
+    {
+      "t": 2,
+      "fps": 240,
+      "p95": 4.2,
+      "ships": 2,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 13.7
+    },
+    {
+      "t": 3,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 3,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13.3
+    },
+    {
+      "t": 4,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 4,
+      "shots": 0,
+      "fx": 2,
+      "heapMB": 12.5
+    },
+    {
+      "t": 5,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 5,
+      "shots": 3,
+      "fx": 3,
+      "heapMB": 12
+    },
+    {
+      "t": 6,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 6,
+      "shots": 0,
+      "fx": 0,
+      "heapMB": 14.8
+    },
+    {
+      "t": 7,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 1,
+      "heapMB": 14.9
+    },
+    {
+      "t": 8,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 12.3
+    },
+    {
+      "t": 9,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13
+    },
+    {
+      "t": 10,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 13.7
+    },
+    {
+      "t": 11,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 3,
+      "heapMB": 14
+    },
+    {
+      "t": 12,
+      "fps": 240,
+      "p95": 4.2,
+      "ships": 7,
+      "shots": 4,
+      "fx": 2,
+      "heapMB": 14.3
+    },
+    {
+      "t": 13,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 4,
+      "heapMB": 14.9
+    },
+    {
+      "t": 14,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 14.8
+    },
+    {
+      "t": 15,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 14.9
+    },
+    {
+      "t": 16,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 14.9
+    },
+    {
+      "t": 17,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 3,
+      "heapMB": 14.7
+    },
+    {
+      "t": 18,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 0,
+      "heapMB": 15
+    },
+    {
+      "t": 19,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 15
+    },
+    {
+      "t": 20,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 5,
+      "heapMB": 14.3
+    },
+    {
+      "t": 21,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 1,
+      "heapMB": 13.7
+    },
+    {
+      "t": 22,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13.2
+    },
+    {
+      "t": 23,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 8,
+      "fx": 8,
+      "heapMB": 15.5
+    },
+    {
+      "t": 24,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 14.7
+    },
+    {
+      "t": 25,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 1,
+      "heapMB": 14
+    },
+    {
+      "t": 26,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 4,
+      "heapMB": 13.3
+    },
+    {
+      "t": 27,
+      "fps": 240,
+      "p95": 4.2,
+      "ships": 7,
+      "shots": 5,
+      "fx": 2,
+      "heapMB": 15.8
+    },
+    {
+      "t": 28,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 3,
+      "heapMB": 15.1
+    },
+    {
+      "t": 29,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 4,
+      "heapMB": 14.3
+    },
+    {
+      "t": 30,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13.2
+    },
+    {
+      "t": 31,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 1,
+      "heapMB": 15.1
+    },
+    {
+      "t": 32,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 3,
+      "heapMB": 14
+    },
+    {
+      "t": 33,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 15.8
+    },
+    {
+      "t": 34,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 15
+    },
+    {
+      "t": 35,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 7,
+      "heapMB": 14.2
+    },
+    {
+      "t": 36,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13.4
+    },
+    {
+      "t": 37,
+      "fps": 240,
+      "p95": 4.2,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 15.9
+    },
+    {
+      "t": 38,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 5,
+      "heapMB": 15.4
+    },
+    {
+      "t": 39,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 1,
+      "heapMB": 14.7
+    },
+    {
+      "t": 40,
+      "fps": 240,
+      "p95": 4.2,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 14
+    },
+    {
+      "t": 41,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 7,
+      "heapMB": 16.2
+    },
+    {
+      "t": 42,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 15.3
+    },
+    {
+      "t": 43,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 4,
+      "heapMB": 14.6
+    },
+    {
+      "t": 44,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 4,
+      "heapMB": 13.7
+    },
+    {
+      "t": 45,
+      "fps": 240,
+      "p95": 4.2,
+      "ships": 7,
+      "shots": 6,
+      "fx": 1,
+      "heapMB": 15.9
+    },
+    {
+      "t": 46,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 2,
+      "heapMB": 15
+    },
+    {
+      "t": 47,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 7,
+      "fx": 3,
+      "heapMB": 14.1
+    },
+    {
+      "t": 48,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 1,
+      "heapMB": 16.1
+    },
+    {
+      "t": 49,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 0,
+      "heapMB": 15
+    },
+    {
+      "t": 50,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 7,
+      "fx": 3,
+      "heapMB": 14
+    },
+    {
+      "t": 51,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 1,
+      "heapMB": 15.9
+    },
+    {
+      "t": 52,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 0,
+      "heapMB": 15
+    },
+    {
+      "t": 53,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 3,
+      "heapMB": 14.1
+    },
+    {
+      "t": 54,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 2,
+      "heapMB": 16
+    },
+    {
+      "t": 55,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 4,
+      "heapMB": 14.8
+    },
+    {
+      "t": 56,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 7,
+      "heapMB": 13.6
+    },
+    {
+      "t": 57,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 1,
+      "heapMB": 15.3
+    },
+    {
+      "t": 58,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 7,
+      "fx": 1,
+      "heapMB": 14.2
+    },
+    {
+      "t": 59,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 8,
+      "fx": 4,
+      "heapMB": 16.1
+    },
+    {
+      "t": 60,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 15
+    },
+    {
+      "t": 61,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 13.6
+    },
+    {
+      "t": 62,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 8,
+      "fx": 3,
+      "heapMB": 15.4
+    },
+    {
+      "t": 63,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 8,
+      "fx": 0,
+      "heapMB": 14.2
+    },
+    {
+      "t": 64,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 16
+    },
+    {
+      "t": 65,
+      "fps": 240,
+      "p95": 4.2,
+      "ships": 7,
+      "shots": 5,
+      "fx": 4,
+      "heapMB": 14.7
+    },
+    {
+      "t": 66,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 16.5
+    },
+    {
+      "t": 67,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 2,
+      "heapMB": 15.3
+    },
+    {
+      "t": 68,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 4,
+      "heapMB": 13.8
+    },
+    {
+      "t": 69,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 15.7
+    },
+    {
+      "t": 70,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 0,
+      "heapMB": 14.5
+    },
+    {
+      "t": 71,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 6,
+      "heapMB": 16.3
+    },
+    {
+      "t": 72,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 1,
+      "heapMB": 14.8
+    },
+    {
+      "t": 73,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 2,
+      "heapMB": 16.3
+    },
+    {
+      "t": 74,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 7,
+      "fx": 4,
+      "heapMB": 14.8
+    },
+    {
+      "t": 75,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 1,
+      "heapMB": 16.5
+    },
+    {
+      "t": 76,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 2,
+      "heapMB": 15.1
+    },
+    {
+      "t": 77,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 5,
+      "heapMB": 16.6
+    },
+    {
+      "t": 78,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 3,
+      "heapMB": 15.4
+    },
+    {
+      "t": 79,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 3,
+      "heapMB": 14
+    },
+    {
+      "t": 80,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 3,
+      "heapMB": 15.9
+    },
+    {
+      "t": 81,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 14.8
+    },
+    {
+      "t": 82,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 3,
+      "heapMB": 16.7
+    },
+    {
+      "t": 83,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 5,
+      "heapMB": 15.3
+    },
+    {
+      "t": 84,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 0,
+      "heapMB": 17
+    },
+    {
+      "t": 85,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 6,
+      "shots": 3,
+      "fx": 5,
+      "heapMB": 15.5
+    },
+    {
+      "t": 86,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 6,
+      "shots": 5,
+      "fx": 7,
+      "heapMB": 16.7
+    },
+    {
+      "t": 87,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 2,
+      "heapMB": 14.8
+    },
+    {
+      "t": 88,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 1,
+      "heapMB": 16.5
+    },
+    {
+      "t": 89,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 3,
+      "heapMB": 15
+    },
+    {
+      "t": 90,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 0,
+      "heapMB": 16.7
+    },
+    {
+      "t": 91,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 1,
+      "heapMB": 15.3
+    },
+    {
+      "t": 92,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 3,
+      "heapMB": 16.9
+    },
+    {
+      "t": 93,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 3,
+      "heapMB": 15.5
+    },
+    {
+      "t": 94,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 1,
+      "heapMB": 17
+    },
+    {
+      "t": 95,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 4,
+      "heapMB": 15.8
+    },
+    {
+      "t": 96,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 1,
+      "heapMB": 14.7
+    },
+    {
+      "t": 97,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 16.5
+    },
+    {
+      "t": 98,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 6,
+      "heapMB": 15.1
+    },
+    {
+      "t": 99,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 1,
+      "heapMB": 11.1
+    },
+    {
+      "t": 100,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 1,
+      "heapMB": 12.7
+    },
+    {
+      "t": 101,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 4,
+      "heapMB": 11
+    },
+    {
+      "t": 102,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 2,
+      "heapMB": 12.7
+    },
+    {
+      "t": 103,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 4,
+      "heapMB": 11.2
+    },
+    {
+      "t": 104,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 4,
+      "heapMB": 13
+    },
+    {
+      "t": 105,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 1,
+      "heapMB": 11.7
+    },
+    {
+      "t": 106,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 13.5
+    },
+    {
+      "t": 107,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 12.2
+    },
+    {
+      "t": 108,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 14
+    },
+    {
+      "t": 109,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 12.7
+    },
+    {
+      "t": 110.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 3,
+      "heapMB": 11.4
+    },
+    {
+      "t": 111.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 13.1
+    },
+    {
+      "t": 112.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 11.7
+    },
+    {
+      "t": 113.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 0,
+      "heapMB": 13.3
+    },
+    {
+      "t": 114.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 2,
+      "heapMB": 11.8
+    },
+    {
+      "t": 115.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 2,
+      "heapMB": 13.4
+    },
+    {
+      "t": 116.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 12.1
+    },
+    {
+      "t": 117.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 2,
+      "heapMB": 13.9
+    },
+    {
+      "t": 118.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 0,
+      "heapMB": 12.7
+    },
+    {
+      "t": 119.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 4,
+      "heapMB": 11.5
+    },
+    {
+      "t": 120.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13.6
+    },
+    {
+      "t": 121.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 12.7
+    },
+    {
+      "t": 122.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 11.8
+    },
+    {
+      "t": 123.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 13.8
+    },
+    {
+      "t": 124.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 12.9
+    },
+    {
+      "t": 125.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 4,
+      "heapMB": 12
+    },
+    {
+      "t": 126.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 14
+    },
+    {
+      "t": 127.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 2,
+      "heapMB": 12.8
+    },
+    {
+      "t": 128.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 2,
+      "heapMB": 11.2
+    },
+    {
+      "t": 129.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 2,
+      "heapMB": 13
+    },
+    {
+      "t": 130.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 2,
+      "heapMB": 12
+    },
+    {
+      "t": 131.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 0,
+      "heapMB": 13.9
+    },
+    {
+      "t": 132.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 12.7
+    },
+    {
+      "t": 133.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 5,
+      "heapMB": 11.4
+    },
+    {
+      "t": 134.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 3,
+      "heapMB": 13.1
+    },
+    {
+      "t": 135.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 3,
+      "heapMB": 12
+    },
+    {
+      "t": 136.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 4,
+      "heapMB": 13.7
+    },
+    {
+      "t": 137.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 2,
+      "heapMB": 12.1
+    },
+    {
+      "t": 138.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 0,
+      "fx": 0,
+      "heapMB": 13.9
+    },
+    {
+      "t": 139.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 12.6
+    },
+    {
+      "t": 140.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 14.4
+    },
+    {
+      "t": 141.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 3,
+      "heapMB": 11.5
+    },
+    {
+      "t": 142.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 1,
+      "heapMB": 13
+    },
+    {
+      "t": 143.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 4,
+      "heapMB": 11.5
+    },
+    {
+      "t": 144.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 1,
+      "heapMB": 12.9
+    },
+    {
+      "t": 145.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 2,
+      "heapMB": 11.3
+    },
+    {
+      "t": 146.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 0,
+      "heapMB": 13.2
+    },
+    {
+      "t": 147.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 11.9
+    },
+    {
+      "t": 148.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 13.5
+    },
+    {
+      "t": 149.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 4,
+      "heapMB": 12.1
+    },
+    {
+      "t": 150.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13.7
+    },
+    {
+      "t": 151.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 0,
+      "heapMB": 12.2
+    },
+    {
+      "t": 152.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 10,
+      "heapMB": 13.9
+    },
+    {
+      "t": 153.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 3,
+      "heapMB": 12
+    },
+    {
+      "t": 154.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 13.5
+    },
+    {
+      "t": 155.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 6,
+      "fx": 1,
+      "heapMB": 12
+    },
+    {
+      "t": 156.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 0,
+      "heapMB": 13.7
+    },
+    {
+      "t": 157.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 2,
+      "heapMB": 12.4
+    },
+    {
+      "t": 158.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 11.1
+    },
+    {
+      "t": 159.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 1,
+      "heapMB": 12.9
+    },
+    {
+      "t": 160.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 2,
+      "heapMB": 11.7
+    },
+    {
+      "t": 161.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 5,
+      "heapMB": 13.6
+    },
+    {
+      "t": 162.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 2,
+      "heapMB": 12.2
+    },
+    {
+      "t": 163.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 1,
+      "heapMB": 13.7
+    },
+    {
+      "t": 164.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 4,
+      "heapMB": 12.4
+    },
+    {
+      "t": 165.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 1,
+      "heapMB": 14.2
+    },
+    {
+      "t": 166.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 12.9
+    },
+    {
+      "t": 167.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 0,
+      "heapMB": 11.4
+    },
+    {
+      "t": 168.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 13.2
+    },
+    {
+      "t": 169.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 1,
+      "heapMB": 11.9
+    },
+    {
+      "t": 170.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 13.7
+    },
+    {
+      "t": 171.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 6,
+      "shots": 2,
+      "fx": 2,
+      "heapMB": 12.4
+    },
+    {
+      "t": 172.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 6,
+      "shots": 4,
+      "fx": 2,
+      "heapMB": 13.7
+    },
+    {
+      "t": 173.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 7,
+      "fx": 2,
+      "heapMB": 11.9
+    },
+    {
+      "t": 174.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 0,
+      "heapMB": 13.7
+    },
+    {
+      "t": 175.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 3,
+      "fx": 0,
+      "heapMB": 12.6
+    },
+    {
+      "t": 176.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 5,
+      "fx": 1,
+      "heapMB": 11.4
+    },
+    {
+      "t": 177.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 1,
+      "heapMB": 13.4
+    },
+    {
+      "t": 178.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 4,
+      "fx": 3,
+      "heapMB": 11.7
+    },
+    {
+      "t": 179.1,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 2,
+      "fx": 4,
+      "heapMB": 13.3
+    },
+    {
+      "t": 180,
+      "fps": 240,
+      "p95": 4.3,
+      "ships": 7,
+      "shots": 1,
+      "fx": 0,
+      "heapMB": 15.2
+    }
+  ]
+}

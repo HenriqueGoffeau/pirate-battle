@@ -27,7 +27,7 @@ export function createShip(world: Pick<World, 'config'> & { nextId: number }, ki
     hitAt: -Infinity,
     cannons: spec.cannons.map((cannon) => ({ spec: cannon, readyAt: 0 })),
     intent: idleIntent(),
-    ai: { blockedFor: 0, commitTurn: 0, commitUntil: 0, orbitSign: 1, orbitBlockedFor: 0, detour: null },
+    ai: { blockedFor: 0, commitTurn: 0, commitUntil: 0, orbitSign: 1, orbitBlockedFor: 0, detour: null, aimError: null, track: null },
   }
 }
 
@@ -43,6 +43,7 @@ export function createWorld(config: MatchConfig, map: MapData): World {
     width: map.cols * map.tile,
     height: map.rows * map.tile,
     rng,
+    aimRng: createRng(Math.imul(config.seed ^ 0x5bd1e995, 0x9e3779b1)),
     playerId: player.id,
     time: 0,
     nextId: counter.nextId,

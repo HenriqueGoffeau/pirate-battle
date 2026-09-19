@@ -33,6 +33,8 @@ export type ShooterSpec = ShipSpec & {
   readonly attackRange: number
   readonly minRange: number
   readonly aimTolerance: number
+  readonly aimSpread: number
+  readonly aimLag: number
 }
 
 export type EnemyKind = 'chaser' | 'shooter'
@@ -144,8 +146,10 @@ export const GameConfig: BalanceConfig = deepFreeze({
       colorIndex: 4,
       attackRange: 380,
       minRange: 220,
-      aimTolerance: 0.26,
-      cannons: [{ id: 'front', group: 'front', angle: 0, offset: 0, muzzle: 56, damage: 10, speed: 360, range: 440, cooldown: 2.2 }],
+      aimTolerance: 0.08,
+      aimSpread: 0.3,
+      aimLag: 1,
+      cannons: [{ id: 'front', group: 'front', angle: 0, offset: 0, muzzle: 56, damage: 10, speed: 200, range: 440, cooldown: 2.2 }],
     },
   },
   ai: {

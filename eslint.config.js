@@ -22,7 +22,7 @@ const layers = {
 }
 
 export default defineConfig([
-  globalIgnores(['dist', 'public', 'assets', 'sessions', 'docs', 'playwright-report', 'test-results']),
+  globalIgnores(['dist', 'dist-perf', 'public', 'assets', 'sessions', 'docs', 'playwright-report', 'test-results']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, tseslint.configs.recommended],

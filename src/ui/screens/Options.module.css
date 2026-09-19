@@ -12,7 +12,7 @@
 
 .title {
   margin: 8px 0 0;
-  font: 800 38px / 1.1 system-ui, sans-serif;
+  font: 800 38px / 1.1 Nunito, system-ui, sans-serif;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -30,7 +30,7 @@
   min-height: 1.4em;
   margin: 0;
   color: rgb(243 233 210 / 80%);
-  font: 600 14px / 1.4 system-ui, sans-serif;
+  font: 600 14px / 1.4 Nunito, system-ui, sans-serif;
 }
 
 .actions {

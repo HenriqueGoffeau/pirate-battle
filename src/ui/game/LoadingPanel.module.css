@@ -38,14 +38,14 @@
 
 .title {
   margin: 4px 0 0;
-  font: 800 22px / 1.25 system-ui, sans-serif;
+  font: 800 22px / 1.25 Nunito, system-ui, sans-serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 .text {
   margin: 6px 0 0;
-  font: 600 15px / 1.4 system-ui, sans-serif;
+  font: 600 15px / 1.4 Nunito, system-ui, sans-serif;
 }
 
 .alert {
@@ -74,7 +74,7 @@
   display: grid;
   place-items: center;
   color: #f3e9d2;
-  font: 800 14px / 1 system-ui, sans-serif;
+  font: 800 14px / 1 Nunito, system-ui, sans-serif;
   text-shadow: 0 1px 2px rgb(0 0 0 / 70%);
 }
 

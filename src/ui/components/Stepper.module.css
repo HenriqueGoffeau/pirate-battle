@@ -5,7 +5,7 @@
 }
 
 .label {
-  font: 700 16px / 1.3 system-ui, sans-serif;
+  font: 700 16px / 1.3 Nunito, system-ui, sans-serif;
 }
 
 .row {
@@ -45,7 +45,7 @@
   border: 0;
   background: transparent;
   color: #f3e9d2;
-  font: 800 26px / 1 system-ui, sans-serif;
+  font: 800 26px / 1 Nunito, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -55,13 +55,13 @@
 }
 
 .unit {
-  font: 800 22px / 1 system-ui, sans-serif;
+  font: 800 22px / 1 Nunito, system-ui, sans-serif;
 }
 
 .limits {
   margin: 0;
   color: rgb(243 233 210 / 75%);
-  font: 600 12px / 1.3 system-ui, sans-serif;
+  font: 600 12px / 1.3 Nunito, system-ui, sans-serif;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -69,7 +69,7 @@
 .error {
   margin: 0;
   color: #f08a7a;
-  font: 700 14px / 1.3 system-ui, sans-serif;
+  font: 700 14px / 1.3 Nunito, system-ui, sans-serif;
 }
 
 @media (max-height: 500px) {

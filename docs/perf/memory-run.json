@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "createdAt": "2026-09-19T04:27:07.145Z",
+    "browser": {
+      "name": "chromium",
+      "version": "153.0.8010.12",
+      "headless": false
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "options": {
+      "sessionSeconds": 120,
+      "spawnIntervalSec": 3
+    },
+    "balanceOverride": {
+      "player.maxHealth": {
+        "value": 100000,
+        "default": 100
+      }
+    },
+    "cycles": 5,
+    "playSeconds": 20,
+    "method": "Menu → Play → sail and fire for 20 s → Pause → Main Menu; then HeapProfiler.collectGarbage ×2, Runtime.getHeapUsage and Performance.getMetrics. Cycle 0 is the menu before the first match."
+  },
+  "rows": [
+    {
+      "cycle": 0,
+      "heapUsedMB": 4.23,
+      "jsHeapUsedMB": 4.23,
+      "domNodes": 157,
+      "jsEventListeners": 196,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 1,
+      "heapUsedMB": 7.72,
+      "jsHeapUsedMB": 7.72,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 2,
+      "heapUsedMB": 7.98,
+      "jsHeapUsedMB": 7.98,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 3,
+      "heapUsedMB": 8.21,
+      "jsHeapUsedMB": 8.21,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 4,
+      "heapUsedMB": 8.38,
+      "jsHeapUsedMB": 8.38,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 5,
+      "heapUsedMB": 8.62,
+      "jsHeapUsedMB": 8.62,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    }
+  ],
+  "verdict": {
+    "rule": "heap(5) ≤ heap(2) × 1.1",
+    "heap2MB": 7.98,
+    "heap5MB": 8.62,
+    "limitMB": 8.78,
+    "pass": true
+  }
+}

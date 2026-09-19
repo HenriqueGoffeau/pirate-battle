@@ -19,6 +19,8 @@ export type AiState = {
   orbitSign: number
   orbitBlockedFor: number
   detour: { x: number; y: number } | null
+  aimError: number | null
+  track: { x: number; y: number } | null
 }
 
 export type Ship = {
@@ -81,6 +83,7 @@ export type World = {
   readonly width: number
   readonly height: number
   readonly rng: Rng
+  readonly aimRng: Rng
   readonly playerId: number
   time: number
   nextId: number

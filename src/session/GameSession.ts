@@ -16,6 +16,7 @@ import { step } from '../sim/step'
 import { createWorld, playerOf } from '../sim/world'
 import { attachAutoPause, isPlayBlocked } from './lifecycle'
 import { startLoop } from './loop'
+import { perfProbe } from './perfProbe'
 import { testControl, type InspectedSession } from './testControl'
 import type {
   HudSnapshot,
@@ -234,6 +235,7 @@ export class GameSession {
       }
     }
     this.publishHud(world)
+    perfProbe.frame(this.state, world, app)
   }
 
   private enter(state: MatchState, patch: Partial<HudSnapshot> = {}): void {

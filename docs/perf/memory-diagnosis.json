@@ -1,0 +1,340 @@
+{
+  "meta": {
+    "createdAt": "2026-09-19T04:16:18.562Z",
+    "browser": {
+      "name": "chromium",
+      "version": "153.0.8010.12",
+      "headless": false
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "options": {
+      "sessionSeconds": 120,
+      "spawnIntervalSec": 3
+    },
+    "balanceOverride": {
+      "player.maxHealth": {
+        "value": 100000,
+        "default": 100
+      }
+    },
+    "cycles": 10,
+    "playSeconds": 5,
+    "method": "Menu → Play → sail and fire for 5 s → Pause → Main Menu, 10 cycles; after each: HeapProfiler.collectGarbage ×2, Runtime.getHeapUsage and Performance.getMetrics. Heap snapshots (HeapProfiler.takeHeapSnapshot) after cycle 2 and cycle 10, aggregated by node type and name; heapSnapshotDiff lists the 40 largest growths (bytes, count)."
+  },
+  "rows": [
+    {
+      "cycle": 0,
+      "heapUsedMB": 4.23,
+      "jsHeapUsedMB": 4.23,
+      "domNodes": 157,
+      "jsEventListeners": 196,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 1,
+      "heapUsedMB": 7.61,
+      "jsHeapUsedMB": 7.61,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 2,
+      "heapUsedMB": 7.88,
+      "jsHeapUsedMB": 7.88,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 3,
+      "heapUsedMB": 8.12,
+      "jsHeapUsedMB": 8.12,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 4,
+      "heapUsedMB": 8.29,
+      "jsHeapUsedMB": 8.29,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 5,
+      "heapUsedMB": 8.52,
+      "jsHeapUsedMB": 8.52,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 6,
+      "heapUsedMB": 8.54,
+      "jsHeapUsedMB": 8.54,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 7,
+      "heapUsedMB": 8.58,
+      "jsHeapUsedMB": 8.58,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 8,
+      "heapUsedMB": 8.65,
+      "jsHeapUsedMB": 8.65,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 9,
+      "heapUsedMB": 8.96,
+      "jsHeapUsedMB": 8.96,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    },
+    {
+      "cycle": 10,
+      "heapUsedMB": 9.02,
+      "jsHeapUsedMB": 9.02,
+      "domNodes": 224,
+      "jsEventListeners": 208,
+      "documents": 3,
+      "canvases": 0
+    }
+  ],
+  "verdict": {
+    "note": "Diagnostic run, not the PERF-03 check: heap(10) vs heap(2) × 1.10",
+    "heap2MB": 7.88,
+    "heap10MB": 9.02,
+    "limitMB": 8.67
+  },
+  "heapSnapshotDiff": {
+    "from": "after cycle 2",
+    "to": "after cycle 10",
+    "top": [
+      {
+        "key": "code:system / InstructionStream",
+        "dSize": 752768,
+        "dCount": 841
+      },
+      {
+        "key": "code:system / TrustedByteArray",
+        "dSize": 133568,
+        "dCount": 1704
+      },
+      {
+        "key": "code:system / FeedbackVector",
+        "dSize": 95028,
+        "dCount": 751
+      },
+      {
+        "key": "code:system / Code",
+        "dSize": 60552,
+        "dCount": 841
+      },
+      {
+        "key": "string:",
+        "dSize": 42268,
+        "dCount": 92
+      },
+      {
+        "key": "code:system / ProtectedFixedArray",
+        "dSize": 19836,
+        "dCount": 84
+      },
+      {
+        "key": "native:system / WeakArrayList",
+        "dSize": 19420,
+        "dCount": 123
+      },
+      {
+        "key": "object shape:",
+        "dSize": 18916,
+        "dCount": 410
+      },
+      {
+        "key": "code:system / LoadHandler",
+        "dSize": 17984,
+        "dCount": 1111
+      },
+      {
+        "key": "code:system / AllocationSite",
+        "dSize": 8776,
+        "dCount": 315
+      },
+      {
+        "key": "code:system / CodeWrapper",
+        "dSize": 6728,
+        "dCount": 841
+      },
+      {
+        "key": "code:system / WeakFixedArray",
+        "dSize": 5136,
+        "dCount": 200
+      },
+      {
+        "key": "object:Object",
+        "dSize": 4388,
+        "dCount": 185
+      },
+      {
+        "key": "native:PerformanceEventTiming",
+        "dSize": 4096,
+        "dCount": 16
+      },
+      {
+        "key": "native:blink::SoftNavigationContext",
+        "dSize": 3712,
+        "dCount": 16
+      },
+      {
+        "key": "native:blink::ImageRecord",
+        "dSize": 2816,
+        "dCount": 16
+      },
+      {
+        "key": "code:system / TrustedWeakFixedArray",
+        "dSize": 2488,
+        "dCount": 84
+      },
+      {
+        "key": "native:blink::TextRecord",
+        "dSize": 2432,
+        "dCount": 16
+      },
+      {
+        "key": "native:blink::LargestContentfulPaintCalculator",
+        "dSize": 2176,
+        "dCount": 16
+      },
+      {
+        "key": "array:(object elements)",
+        "dSize": 1980,
+        "dCount": 72
+      },
+      {
+        "key": "native:blink::HeapHashTableBacking<blink::HashTable<unsigned int, b",
+        "dSize": 1848,
+        "dCount": -1
+      },
+      {
+        "key": "native:PerformanceSoftNavigation",
+        "dSize": 1792,
+        "dCount": 16
+      },
+      {
+        "key": "native:NavigationHistoryEntry",
+        "dSize": 1536,
+        "dCount": 8
+      },
+      {
+        "key": "object:Array",
+        "dSize": 1328,
+        "dCount": 83
+      },
+      {
+        "key": "native:system / ProtectedFixedArray",
+        "dSize": 1144,
+        "dCount": 84
+      },
+      {
+        "key": "code:system / StoreHandler",
+        "dSize": 1096,
+        "dCount": 71
+      },
+      {
+        "key": "native:LargestContentfulPaint",
+        "dSize": 1088,
+        "dCount": 8
+      },
+      {
+        "key": "native:InteractionContentfulPaint",
+        "dSize": 832,
+        "dCount": 8
+      },
+      {
+        "key": "number:",
+        "dSize": 792,
+        "dCount": 77
+      },
+      {
+        "key": "code:(object elements)",
+        "dSize": 728,
+        "dCount": 23
+      },
+      {
+        "key": "native:system / SharedFunctionInfoWrapper",
+        "dSize": 672,
+        "dCount": 84
+      },
+      {
+        "key": "array:",
+        "dSize": 656,
+        "dCount": 4
+      },
+      {
+        "key": "native:blink::MediaQueryFeatureExpNode",
+        "dSize": 640,
+        "dCount": 8
+      },
+      {
+        "key": "code:system / WeakArrayList",
+        "dSize": 572,
+        "dCount": 14
+      },
+      {
+        "key": "code:system / BytecodeArray",
+        "dSize": 544,
+        "dCount": 4
+      },
+      {
+        "key": "code:system / AtomRegExpData",
+        "dSize": 532,
+        "dCount": 7
+      },
+      {
+        "key": "native:blink::HeapHashTableBacking<blink::HashTable<unsigned long l",
+        "dSize": 512,
+        "dCount": 0
+      },
+      {
+        "key": "code:system / IrRegExpData",
+        "dSize": 448,
+        "dCount": 4
+      },
+      {
+        "key": "native:system / PropertyArray",
+        "dSize": 264,
+        "dCount": 11
+      },
+      {
+        "key": "native:blink::MediaQuery",
+        "dSize": 256,
+        "dCount": 8
+      }
+    ]
+  }
+}

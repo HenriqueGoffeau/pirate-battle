@@ -21,6 +21,10 @@ async function boot(): Promise<void> {
     const { installTestApi } = await import('../testing/testApi')
     installTestApi()
   }
+  if (search.get('perf') === '1') {
+    const { perfProbe } = await import('../session/perfProbe')
+    perfProbe.enable()
+  }
   const mocks = await startMsw(search)
   setOffline(mocks === null)
   startOutbox()

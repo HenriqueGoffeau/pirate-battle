@@ -94,15 +94,42 @@ function chaseTarget(world: World, ship: Ship, player: Ship, clearSight: boolean
   return best ?? player
 }
 
+function aimError(world: World, ship: Ship): number {
+  if (ship.ai.aimError === null) ship.ai.aimError = (world.aimRng.next() * 2 - 1) * world.config.enemies.shooter.aimSpread
+  return ship.ai.aimError
+}
+
+function trackPlayer(world: World, ship: Ship, player: Ship, dt: number): void {
+  const track = ship.ai.track
+  if (!track) {
+    ship.ai.track = { x: player.x, y: player.y }
+    return
+  }
+  const follow = Math.min(1, dt / world.config.enemies.shooter.aimLag)
+  track.x += (player.x - track.x) * follow
+  track.y += (player.y - track.y) * follow
+}
+
+function aimAngle(world: World, ship: Ship, player: Ship): number {
+  const target = ship.ai.track ?? player
+  return Math.atan2(target.y - ship.y, target.x - ship.x) + aimError(world, ship)
+}
+
+function aimDirection(world: World, ship: Ship, player: Ship): Vec {
+  const angle = aimAngle(world, ship, player)
+  return { x: Math.cos(angle), y: Math.sin(angle) }
+}
+
 function aimAndFire(world: World, ship: Ship, player: Ship, distance: number, clearSight: boolean): void {
   if (!clearSight) return
-  const angleToPlayer = Math.atan2(player.y - ship.y, player.x - ship.x)
+  const aim = aimAngle(world, ship, player)
   const tolerance = world.config.enemies.shooter.aimTolerance
   for (const cannon of ship.cannons) {
+    if (world.time < cannon.readyAt || distance > cannon.spec.range) continue
     const direction = ship.heading + degToRad(cannon.spec.angle)
-    if (Math.abs(wrapAngle(direction - angleToPlayer)) < tolerance && distance <= cannon.spec.range) {
-      ship.intent.fire[cannon.spec.group] = true
-    }
+    if (Math.abs(wrapAngle(direction - aim)) >= tolerance) continue
+    ship.intent.fire[cannon.spec.group] = true
+    ship.ai.aimError = null
   }
 }
 
@@ -121,12 +148,12 @@ function applyStuckRule(world: World, ship: Ship, sense: Feeler, dt: number): vo
   }
 }
 
-function orbitOrAim(world: World, ship: Ship, toPlayer: Vec, sense: Feeler, clearSight: boolean, dt: number): void {
+function orbitOrAim(world: World, ship: Ship, player: Ship, toPlayer: Vec, sense: Feeler, clearSight: boolean, dt: number): void {
   const ai = ship.ai
   const { aimLead, aimThrust, orbitFlipAfter, weights } = world.config.ai
   const loaded = ship.cannons.some((cannon) => world.time >= cannon.readyAt - aimLead)
   if (loaded && clearSight) {
-    steer(world, ship, toPlayer, false)
+    steer(world, ship, aimDirection(world, ship, player), false)
     ship.intent.thrust = aimThrust
     return
   }
@@ -157,6 +184,7 @@ export function aiSystem(world: World, dt: number): void {
       ship.intent.turn = 0
       continue
     }
+    if (ship.kind === 'shooter') trackPlayer(world, ship, player, dt)
     const distance = Math.hypot(player.x - ship.x, player.y - ship.y)
     const toPlayer = toward(ship, player)
     const clearSight = raycast(world.grid, ship.x, ship.y, player.x, player.y) === null
@@ -174,7 +202,7 @@ export function aiSystem(world: World, dt: number): void {
     } else if (distance < shooterSpec.minRange) {
       steer(world, ship, { x: -toPlayer.x + apart.x + sense.push.x, y: -toPlayer.y + apart.y + sense.push.y }, false)
     } else {
-      orbitOrAim(world, ship, toPlayer, sense, clearSight, dt)
+      orbitOrAim(world, ship, player, toPlayer, sense, clearSight, dt)
     }
     applyStuckRule(world, ship, sense, dt)
     if (ship.kind === 'shooter') aimAndFire(world, ship, player, distance, clearSight)

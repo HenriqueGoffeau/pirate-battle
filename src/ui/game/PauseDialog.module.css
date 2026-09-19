@@ -1,6 +1,6 @@
 .text {
   margin: 0 0 6px;
-  font: 600 16px / 1.4 system-ui, sans-serif;
+  font: 600 16px / 1.4 Nunito, system-ui, sans-serif;
 }
 
 @media (max-height: 500px) {

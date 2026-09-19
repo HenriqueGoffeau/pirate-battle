@@ -9,7 +9,7 @@
   white-space: nowrap;
   border-radius: 28% / 60%;
   background: center / 100% 100% no-repeat;
-  font: 800 calc(var(--button-width, 256px) * 0.086) / 1 system-ui, sans-serif;
+  font: 800 calc(var(--button-width, 256px) * 0.086) / 1 Nunito, system-ui, sans-serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   cursor: pointer;

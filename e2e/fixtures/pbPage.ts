@@ -16,6 +16,8 @@ declare global {
 
 export type MatchOptions = { sessionSeconds: number; spawnIntervalSec: number }
 
+export const survivorSeed = 143
+
 export type OpenOptions = { scenario?: TestScenarioId; reset?: boolean }
 
 export type StartOptions = { seed?: number; options?: MatchOptions }

@@ -7,7 +7,7 @@ const colors = { grid: 0xffffff, solid: 0xff5a4f, edge: 0xffd23f, entry: 0xe5484
 const arrowLength = 72
 
 const labelStyle = {
-  fontFamily: 'system-ui, sans-serif',
+  fontFamily: 'Nunito, system-ui, sans-serif',
   fontSize: 14,
   fontWeight: '700',
   fill: 0xffffff,

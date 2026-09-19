@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { expect, test, type MatchOptions, type PbPage } from '../fixtures/pbPage'
+import { expect, survivorSeed, test, type MatchOptions, type PbPage } from '../fixtures/pbPage'
 
 const quickMatch: MatchOptions = { sessionSeconds: 60, spawnIntervalSec: 10 }
 
@@ -47,7 +47,7 @@ test.describe('TEST-11 save: a finished match reaches both tabs, and a pending s
     await page.getByRole('tab', { name: 'Match History' }).click()
     await expect(panel.getByText('No battles logged yet.', { exact: true })).toBeVisible()
 
-    await pb.startMatch()
+    await pb.startMatch({ seed: survivorSeed })
     await pb.advance(61_000)
     await expect(page).toHaveURL(/\/result$/)
     const dialog = page.getByRole('dialog', { name: 'You survived the attack' })
@@ -80,7 +80,7 @@ test.describe('TEST-11 save: a finished match reaches both tabs, and a pending s
     test.setTimeout(90_000)
     pb.allowConsole(/Failed to load resource: the server responded with a status of 503/)
     await pb.open('/', { scenario: 'downThenRecover' })
-    await pb.startMatch({ options: quickMatch })
+    await pb.startMatch({ seed: survivorSeed, options: quickMatch })
     await pb.advance(61_000)
     await expect(page).toHaveURL(/\/result$/)
 

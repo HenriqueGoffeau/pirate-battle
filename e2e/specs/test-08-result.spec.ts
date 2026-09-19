@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { expect, test, type PbPage } from '../fixtures/pbPage'
+import { expect, survivorSeed, test, type PbPage } from '../fixtures/pbPage'
 
 const shortMatch = { sessionSeconds: 60, spawnIntervalSec: 10 }
 const saving = 'Saving to the captain’s log…'
@@ -20,7 +20,7 @@ const resultDialog = (page: Page) => page.getByRole('dialog', { name: 'You survi
 const onPath = (path: string) => (url: URL) => url.pathname === path
 
 async function playToTimeUp(pb: PbPage) {
-  await pb.startMatch({ options: shortMatch })
+  await pb.startMatch({ seed: survivorSeed, options: shortMatch })
   await pb.advance(61_000)
   const final = await pb.snapshot()
   expect(final).toMatchObject({ state: 'ended', ended: true, endReason: 'timeUp' })

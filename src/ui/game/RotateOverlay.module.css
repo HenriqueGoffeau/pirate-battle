@@ -24,14 +24,14 @@
 .text {
   max-width: 260px;
   margin: 0;
-  font: 800 22px / 1.25 system-ui, sans-serif;
+  font: 800 22px / 1.25 Nunito, system-ui, sans-serif;
   text-transform: uppercase;
 }
 
 .hint {
   margin: 0;
   color: rgb(243 233 210 / 75%);
-  font: 600 14px / 1.4 system-ui, sans-serif;
+  font: 600 14px / 1.4 Nunito, system-ui, sans-serif;
 }
 
 @media (prefers-reduced-motion: no-preference) {

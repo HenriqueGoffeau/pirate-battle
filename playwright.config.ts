@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = 'http://localhost:4173'
+const liveURL = process.env.PB_BASE_URL
+const baseURL = liveURL ?? 'http://localhost:4173'
 
 export default defineConfig({
   testDir: './e2e/specs',
@@ -23,12 +24,14 @@ export default defineConfig({
     timezoneId: 'America/Sao_Paulo',
     contextOptions: { reducedMotion: 'reduce' },
   },
-  webServer: {
-    command: 'npm run build && npm run preview -- --strictPort',
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: liveURL
+    ? undefined
+    : {
+        command: 'npm run build && npm run preview -- --strictPort',
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000,
+      },
   projects: [
     {
       name: 'desktop',

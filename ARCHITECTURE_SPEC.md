@@ -124,7 +124,7 @@ unhashed files copied from `public/assets/` (`/assets/*`, revalidated).
   `matchConfig` must be a stable snapshot object created on navigation to `/play`; Play Again creates a new one.
 - `GameSession.start()`:
   1. `await assets.ensureLoaded(p => publish({loadProgress: p}))`
-  2. `const app = new Application(); await app.init({ resolution: dpr, autoDensity: true, autoStart: false })`
+  2. `const app = new Application(); await app.init({ resolution: dpr, autoDensity: true, autoStart: false })` (as built: `resolution: min(dpr, 2)`, the §22 fallback, applied from the start)
   3. `if (this.disposed) { app.destroy(true); return }` ← Strict Mode guard after **every** await
   4. append canvas, build stage, attach input, start loop, `publish({ matchState: 'ready' })`
 - `dispose()` is idempotent: flag → stop loop → detach input + blur/visibility/orientation listeners → disconnect ResizeObserver
@@ -366,7 +366,7 @@ steerTo(ship, dir): err = wrapAngle(atan2(dir) - heading)
   turn = |err| < steerDeadZone ? 0 : sign(err)·rate/turnRate; thrust = |err| < 90° ? 1 : 0.3
   (a plain sqrt controller chattered left/right ~16 times per enemy-second; with the linear zone and dead zone: ~0.24)
 desired(enemy) = normalize(toPlayer*1.0 + separation*0.6 + feeler*1.2)
-  separation = Σ (pos - other.pos)/d² for enemies within 70 px
+  separation = Σ (pos - other.pos)/d² for enemies within 70 px   (as built: linear falloff 1 − d/110 within 110 px, weight 1)
   feeler     = 48 px ray ahead vs solid mask → lateral nudge when blocked
   stuck rule = blocked > 1 s → commit to one turn direction for 1.5 s
 CHASER : steerTo(desired), full thrust; contact handled by collision
@@ -391,6 +391,21 @@ As built (M2), two changes found by watching seeded matches:
 Measured headless over 20 seeds with an idle player at the start: Chaser arrival→ram median 4.8 s, p90 11.6 s (far entries);
 Shooters fire about 0.2 shots per second each; an idle player sinks in 15–32 s at the default 3 s interval.
 ```
+
+As built (M7), Shooter aim retuned (stretch #2, raised at M3 play-testing: "Shooters hit almost every shot"). Measured with a
+headless bench (20 seeds × 180 s, 3 s spawns, Shooter-only, invulnerable scripted player): the old rule fired as soon as the bow
+entered the ±0.26 rad window, so it shot 15° off a still target (idle hit rate 9.3%) but the entry edge led a moving one (a bot
+sailing between visible waypoints at ≈ 95 px/s: 32.0%). Precise aim alone was worse (55–68% on every moving bot): Shooters trail
+the player and fire down its 96 px hull. The rule now:
+- each Shooter keeps `ai.track`, an estimate of the player's position following it with an exponential lag (`aimLag` 1 s:
+  `track += (player − track) · min(1, dt / aimLag)`), so a ship that keeps sailing is aimed behind;
+- it aims at the track plus a per-volley error in ±`aimSpread` (0.3 rad) drawn from `world.aimRng`, a second stream seeded from
+  the match seed, so the spawn sequence and every spawn fact in §17 are unchanged; the error is re-rolled after each shot;
+- it steers toward that aim while loaded and fires only when ready and within `aimTolerance` (0.26 → 0.08 rad);
+- its ball flies at 200 px/s instead of 360: visible, and a ship fleeing at 120 px/s from ≥ 220 px outruns the 440 px range.
+Hit rate before → after: idle 9.3% → 61.3%; waypoint sailing 32.0% → 19.5%; stop-and-go 29.1% → 26.1%; slow circling
+through islands (≈ 72 px/s) 24.7% → 36.4%. Sitting still is punished and sailing is the defence. With seed 42 an idle player no
+longer survives 60 s at a 10 s interval (sunk at ≈ 47 s), so the time-up specs moved to seed 143 (§17).
 
 Spawning: `nextSpawnAt += spawnIntervalSec` in sim time (timer keeps advancing even when a spawn is skipped).
 Order per spawn: pick the type first (seeded weighted pick; the first two spawns are forced one of each in seeded order, so both
@@ -494,7 +509,7 @@ States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused →
 
 `scale = min(W/1536, H/896)`; world container centered; the remaining screen shows the sea and fog beyond the arena (§3), not
 bars (e.g. 915×412 phone: scale 0.46, ≈ 104 px of fog zone each side). `ResizeObserver` on the host drives
-`renderer.resize(W, H)`; `resolution: devicePixelRatio, autoDensity: true`. HUD and touch layer are DOM, positioned against the
+`renderer.resize(W, H)`; `resolution: devicePixelRatio, autoDensity: true` (as built: `min(devicePixelRatio, 2)`). HUD and touch layer are DOM, positioned against the
 viewport with `env(safe-area-inset-*)`; buttons ≥ 56 px. Minimum tested phone 640×360. Visual regression viewports: 1280×720 and
 915×412 (landscape mobile), DPR 1.
 
@@ -685,7 +700,7 @@ interface PbTestApi {            // window.__PB_TEST__, only when location.searc
 Playwright projects: `desktop` Chromium 1280×720 DPR 1; `mobile` Chromium landscape 915×412 hasTouch (runs TEST-01 and TEST-09 only;
 stretch adds 08, 10). One spec file per TEST-ID, 1–3 tests each (~22 total). Fixture `pbPage` opens
 `/?test=1&scenario=X&reset=1`, waits for `body[data-msw-ready]`, fails on console errors. `?test=1` also disables ambient
-animation and the render RNG. Visual baselines: menu, arena after `advance(5000)` seed 42 no input, result after timeUp;
+animation and the render RNG (as built there is neither: the fog is a deterministic hash, so rendering needs no switch). Visual baselines: menu, arena after `advance(5000)` seed 42 no input, result after timeUp;
 `maxDiffPixelRatio 0.005`; generated in the Playwright Docker image. `page.clock` for wall-clock waits (outbox backoff) in data specs only.
 Reporter html + list, `trace: 'retain-on-failure'`. Vitest (6 suites, no others): comparator (M5, `data/contracts/ranking.test.ts`), validateOptions (M4), outbox reducer (M5, `data/outboxReducer.test.ts`), segment-circle (M2, `shared/math.test.ts`),
 spawn entries (M1, `assets/parseTiledMap.test.ts`), **determinism** (M2, `session/determinism.test.ts`: same seed + scripted input
@@ -741,6 +756,12 @@ As built (M6):
 | TEST-12 | `test-12-resend`: timeoutAfterSave → Saving while the PUT hangs (the record is already stored), Not saved after the 8 s client timeout, Retry now → Saved, PUTs [201, 200], one history row; outOfOrder → the late page-1 refetch (#3) never replaces page 2 (#4) | requestLog | timeoutAfterSave, outOfOrder | D |
 | TEST-14 | `visual`: menu; arena after 5 s with seed 42 and no input; Result after time-up (60 s / 10 s) | manual clock | success · 42 | D + M |
 
+As built (M7): the time-up specs (visual result, TEST-06 time-up, TEST-08, TEST-11, TEST-12) start with `survivorSeed = 143`
+(exported by the fixture), whose idle player reaches time-up with 50/100 after the Shooter retune (§8); TEST-06's "defeat with a
+kill" holds the bow gun with seed 50 (scores 3 before sinking). The UI font is Nunito, self-hosted (§19), so both baseline sets
+render the same typeface; the menu baseline masks the "Build <sha>" footer. `PB_BASE_URL=https://… npm run test:e2e` runs the
+suite against a deployed URL (no local web server).
+
 38 tests; 48 runs across the two projects (the touch test is skipped on desktop). TEST-13 = the two projects, TEST-15 = seed +
 manual clock, TEST-16 = the API above, TEST-17 = a fresh context per test plus `reset=1`, TEST-18 = HTML report + traces.
 Notes from the agents for ARCHITECTURE.md §19 (not bugs): sliding along an island at a steep angle is slow because each step keeps
@@ -756,6 +777,24 @@ before first render because the mocks must be up before any query (§16). Report
 on end downloads JSON. `scripts/perf.spec.ts`: `vite preview`, session 180 s, spawn 1 s, bot on real keyboard, 3 min real time →
 `docs/perf/REPORT.md` with machine, browser, DPR, viewport, config. Targets: mean ≥ 58 FPS, p95 ≤ 20 ms. Memory: 5 × (Play → 20 s → Menu)
 with manual DevTools heap snapshots (automated CDP spec is stretch); pass = heap(cycle 5) ≤ heap(cycle 2) × 1.10.
+
+As built (M7), written by one agent while the lead finished the Shooter aim, the font and the docs:
+- **Probe** (`session/perfProbe.ts`): enabled from `main.tsx` by `?perf=1`; `GameSession.frame()` calls `perfProbe.frame(state,
+  world, app)`, a boolean check when disabled. Frame time is the rAF timestamp (`document.timeline.currentTime`) into a
+  preallocated `Float32Array` (65 536 frames), counted only while `running`; one sample per second of play; on `ended` it
+  downloads `{ meta (UA, DPR, viewport, canvas, renderer, GPU string, commit), config, summary (mean FPS, p50/p95/p99/max,
+  frames > 20/33 ms, entity peaks, heap), samples }`.
+- **Runs** (`npm run perf` → `scripts/perf.ts`): `playwright.perf.config.ts` builds into `dist-perf`, serves it on port 4174 and
+  drives headed Chromium at 1920×1080, DPR 1 (real GPU; `PERF_HEADLESS=1` for headless). `scripts/memory.spec.ts` (the stretch
+  #7 CDP spec, automated): 5 × Menu → Play → 20 s of sailing and firing → Pause → Main Menu, forced GC ×2, `Runtime.getHeapUsage`
+  + `Performance.getMetrics` (DOM nodes, listeners) + canvas count. `scripts/perf.spec.ts`: production mode (no hooks), 180 s /
+  1 s spawns, a dev-balance override of the player's health (so the ship lasts the whole match; the run is `custom`), a keyboard
+  bot pressing real keys for 3 min. `scripts/perf-report.ts` renders `docs/perf/REPORT.md` from the two JSON files, the machine,
+  the bundle sizes and `docs/perf/notes.md`.
+- **Results** on the reference machine (Ryzen 9 5900X, Radeon RX 9060 XT, 240 Hz display, Chromium 153): mean 239.98 FPS
+  (vsync-bound), p95 4.3 ms, max 12.5 ms, 0 frames > 20 ms, peak 7 ships / 9 balls / 10 effects; memory 7.98 → 8.62 MB from
+  cycle 2 to 5 (limit 8.78 MB, PASS) with DOM nodes, listeners and canvases flat. A 10-cycle diagnostic with heap snapshots
+  (`docs/perf/memory-diagnosis.json`) attributes ≈ 1.07 of the 1.14 MB growth to V8 compiled code and feedback, not app state.
 
 ## 19. Accessibility (A11Y-05/06)
 
@@ -774,6 +813,10 @@ pause as keyboard modality, so the ring appeared only after Tab (found at M3). R
 backgrounds; `:focus-visible` 3 px cream outline offset 3 px. Options: `role="group"`, `<output>` value, visible limits text,
 errors `role="alert"` + `aria-describedby`. Tables: `<th scope>`, YOU row `aria-current`. `prefers-reduced-motion` disables HUD flash.
 Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A ≈ 7.9:1; DEFEATED tint #F08A7A.
+As built (M7): the UI font is Nunito (variable, weights 200–1000, SIL OFL 1.1), self-hosted as a 39 kB Latin-subset woff2 in
+`src/app/fonts/` (with its `OFL.txt`), hashed into `/static/`, preloaded from `index.html`, `font-display: swap`; every
+`system-ui` stack now starts with it. Glyphs outside the subset (★, ← →) fall back to the system font. Checked for clipping at
+640×360, 915×412 and 1280×720.
 
 ## 20. Milestones (two days, 24 h committed + 4 h buffer)
 
@@ -788,7 +831,7 @@ Contrast: cream #F3E9D2 on navy #243447 ≈ 10.5:1; dark #1F2A38 on gold #E0B95A
 | M5 | 3 | Contracts, Axios, queries, outbox, storage codec (options/player part landed in M4), Result save-status row (moved from M4), handlers, fakeDb, comparator, 14 scenarios, fixtures, dev panel (network + JSON balance), worker before render, custom flag. As built also: offline banner, the menu pending badge, 409 on a changed body, server-side custom check, a two-column Log on short screens | Deployed: match → rows in both tabs; timeoutAfterSave → one row after Retry; pending badge survives reload |
 | CP2 | h20.5 | If behind: M6 keeps 3.5 h, M7 shrinks to 1.5 h | Manual pass of every TEST-ID on the deployed build |
 | M6 | 3.5 | Test API, pbPage fixture, 12 spec files (order 01,03,04,06,07 → 02,05,08,09 → 10,11,12), 6 baselines, report + traces committed. As built: specs written in parallel by three agents on the lead's harness; ManualClock draws once per advance; loading panel delayed 150 ms; Windows and Linux baselines; Docker runner + CI workflow | `test:e2e` green twice locally, once in CI (no remote yet: the Docker run of the same image stands in until the repository is pushed) |
-| M7 | 2 | Perf run, memory check, REPORT.md, README, ARCHITECTURE.md (outline §21), licenses, tagged deploy | Clean clone runs dev/build/preview/lint/typecheck/test:e2e; deployed SHA = tag |
+| M7 | 2 | Perf run, memory check, REPORT.md, README, ARCHITECTURE.md (outline §21), licenses, tagged deploy. As built: Shooter aim retuned (stretch #2, §8) and self-hosted Nunito (§19) first, because both change seeded outcomes and baselines; perf probe + automated perf and memory specs (stretch #7, §18) written by one agent, README + licenses and ARCHITECTURE.md drafted by two more, all reviewed by the lead; `PB_BASE_URL` runs the suite against a deployed URL | Clean clone runs dev/build/preview/lint/typecheck/test:e2e (checked on a copy of exactly the commit's files: npm ci, lint, typecheck, 29 Vitest, build, preview and dev answer, 47 passed / 1 skipped); `test:e2e` green twice on Windows and once in the Linux image; deployed SHA = tag (deploy and tag by the author) |
 
 Stretch order (buffer only): 1 Shooter side cannons (0.75 h) · 2 balance tuning (0.5) · 3 restore two-circle hulls if dropped ·
 4 mobile project → TEST-01/08/09/10 (0.75) · 5 resume countdown (0.5) · 6 sinking debris/crew (0.75) · 7 automated memory spec (0.5) ·
@@ -826,4 +869,4 @@ env vars (`VITE_COMMIT_SHA` build arg only); controls; gameplay config + dev pan
 | Late responses leak | signal is a required param of every api fn; TEST-12 | serverTime compare in structuralSharing |
 | Service worker timing in tests | render after worker.start(); fixture waits for data-msw-ready | context.route holds /api/** until ready (page.route cannot see worker traffic) |
 | Sticky keys | clear() on pause/blur/hidden/resume/dispose; TEST-07 | clear on unknown keyup |
-| < 60 FPS at DPR 2 | static tiles, atlases, pools, cap 12 | resolution min(dpr, 2); bars redraw on change; document |
+| < 60 FPS at DPR 2 | static tiles, atlases, pools, cap 12 (as built: 6 alive) | resolution min(dpr, 2); bars redraw on change; document |

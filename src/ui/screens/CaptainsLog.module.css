@@ -9,7 +9,7 @@
 
 .title {
   margin: 4px 0 0;
-  font: 800 36px / 1.1 system-ui, sans-serif;
+  font: 800 36px / 1.1 Nunito, system-ui, sans-serif;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -27,7 +27,7 @@
 
 .caption {
   margin: 0;
-  font: 700 13px / 1.4 system-ui, sans-serif;
+  font: 700 13px / 1.4 Nunito, system-ui, sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -104,7 +104,7 @@
   border-radius: 999px;
   background: #e0b95a;
   color: #1f2a38;
-  font: 800 10px / 1.2 system-ui, sans-serif;
+  font: 800 10px / 1.2 Nunito, system-ui, sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   vertical-align: 2px;
@@ -137,7 +137,7 @@
   border: 1px solid rgb(224 185 90 / 70%);
   border-radius: 999px;
   color: #e0b95a;
-  font: 700 10px / 1.2 system-ui, sans-serif;
+  font: 700 10px / 1.2 Nunito, system-ui, sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   vertical-align: 1px;

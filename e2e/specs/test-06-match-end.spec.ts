@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { GameConfig } from '../../src/config/gameConfig'
 import type { TestSnapshot } from '../../src/testing/types'
-import { expect, test, type PbPage } from '../fixtures/pbPage'
+import { expect, survivorSeed, test, type PbPage } from '../fixtures/pbPage'
 
 const look = (page: Page, ms: number): Promise<TestSnapshot> =>
   page.evaluate((value) => {
@@ -24,7 +24,7 @@ test.describe('TEST-06 match end: time up, defeat, the simulation stopping, a cl
   test('time running out ends the match as a survival and freezes the simulation', async ({ pb, page }) => {
     const options = { sessionSeconds: 60, spawnIntervalSec: 10 }
     await pb.open('/')
-    await pb.startMatch({ seed: 42, options })
+    await pb.startMatch({ seed: survivorSeed, options })
 
     const almost = await look(page, (options.sessionSeconds - 0.1) * 1000)
     expect(almost).toMatchObject({ state: 'running', ended: false, endReason: null, timeLeftSec: 1 })
@@ -69,8 +69,9 @@ test.describe('TEST-06 match end: time up, defeat, the simulation stopping, a cl
 
   test('Play Again after a lost battle with a kill starts a brand-new match', async ({ pb, page }) => {
     const options = { sessionSeconds: 120, spawnIntervalSec: 1 }
+    const seed = 50
     await pb.open('/')
-    const first = await pb.startMatch({ seed: 42, options })
+    const first = await pb.startMatch({ seed, options })
     const map = await pb.map()
 
     await page.keyboard.down('Space')
@@ -99,7 +100,7 @@ test.describe('TEST-06 match end: time up, defeat, the simulation stopping, a cl
       enemies: [],
       projectiles: [],
       spawns: { count: 0, nextAt: options.spawnIntervalSec },
-      config: { sessionSeconds: options.sessionSeconds, spawnIntervalSec: options.spawnIntervalSec, seed: 42 },
+      config: { sessionSeconds: options.sessionSeconds, spawnIntervalSec: options.spawnIntervalSec, seed },
     })
     expect(fresh.player).toMatchObject({
       x: map.playerStart.x,

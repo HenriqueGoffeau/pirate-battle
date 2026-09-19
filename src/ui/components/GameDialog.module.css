@@ -28,7 +28,7 @@
 
 .title {
   margin: 8px 0 0;
-  font: 800 40px / 1.1 system-ui, sans-serif;
+  font: 800 40px / 1.1 Nunito, system-ui, sans-serif;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-wrap: balance;

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { expect, test, type MatchOptions, type PbPage } from '../fixtures/pbPage'
+import { expect, survivorSeed, test, type MatchOptions, type PbPage } from '../fixtures/pbPage'
 
 const quickMatch: MatchOptions = { sessionSeconds: 60, spawnIntervalSec: 10 }
 
@@ -51,7 +51,7 @@ test.describe('TEST-12 resend and late responses: no duplicates, no stale overwr
   }) => {
     test.setTimeout(90_000)
     await pb.open('/', { scenario: 'timeoutAfterSave' })
-    await pb.startMatch({ options: quickMatch })
+    await pb.startMatch({ seed: survivorSeed, options: quickMatch })
     await pb.advance(61_000)
     await expect(page).toHaveURL(/\/result$/)
 
