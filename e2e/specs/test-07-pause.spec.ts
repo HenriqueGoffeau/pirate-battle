@@ -12,6 +12,12 @@ const setTabHidden = (page: Page, hidden: boolean) =>
     document.dispatchEvent(new Event('visibilitychange'))
   }, hidden)
 
+const setWindowFocus = (page: Page, focused: boolean) =>
+  page.evaluate((value) => {
+    if (value) delete (document as { hasFocus?: () => boolean }).hasFocus
+    else document.hasFocus = () => false
+  }, focused)
+
 test.describe('TEST-07 pause: frozen clock, resume, focus loss', () => {
   test('P pauses and freezes time and cooldowns; P, Esc and the Resume button each resume', async ({ pb, page }) => {
     await pb.open('/')
@@ -127,5 +133,41 @@ test.describe('TEST-07 pause: frozen clock, resume, focus loss', () => {
     expect((await pb.snapshot()).time).toBe(clicked.time)
     await resume()
     expect(await pb.state()).toBe('running')
+  })
+
+  test('a battle that finishes loading while the window has no focus starts paused and waits for Resume', async ({
+    pb,
+    page,
+  }) => {
+    await pb.open('/')
+    await pb.setOptions(quietMatch)
+    await pb.setSeed(42)
+    await pb.useManualClock()
+    await setWindowFocus(page, false)
+    await page.getByRole('button', { name: 'Play', exact: true }).click()
+    await pb.waitForState('ready', 20_000)
+    await pb.step(1)
+    expect(await pb.state()).toBe('paused')
+    const dialog = pauseDialog(page)
+    await expect(dialog).toBeVisible()
+
+    await pb.advance(3000)
+    const waiting = await pb.snapshot()
+    expect(waiting.time).toBe(0)
+    expect(waiting.timeLeftSec).toBe(quietMatch.sessionSeconds)
+    expect(waiting.spawns.count).toBe(0)
+
+    const resume = dialog.getByRole('button', { name: 'Resume', exact: true })
+    await resume.click()
+    await pb.step(1)
+    expect(await pb.state()).toBe('paused')
+
+    await setWindowFocus(page, true)
+    await resume.click()
+    await pb.step(1)
+    expect(await pb.state()).toBe('running')
+    expect((await pb.snapshot()).time).toBe(0)
+    await pb.step(60)
+    expect((await pb.snapshot()).time).toBeCloseTo(1, 6)
   })
 })

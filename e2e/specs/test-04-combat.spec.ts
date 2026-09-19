@@ -41,6 +41,15 @@ const ballsOf = (frame: TestSnapshot, group: CannonGroup): TestProjectile[] => {
 const firedFrontBall = (frame: TestSnapshot) =>
   ballsOf(frame, 'front').some((ball) => Math.abs(Math.hypot(ball.x - frame.player.x, ball.y - frame.player.y) - muzzleReach) < 1e-6)
 
+const freshBroadside = (frame: TestSnapshot, group: 'left' | 'right'): TestProjectile[] => {
+  const cannon = player.cannons.find((spec) => spec.group === group)!
+  const direction = groupDirection(frame.player.heading, group)
+  const reach = cannon.muzzle + cannon.speed * dt
+  return ballsOf(frame, group).filter(
+    (ball) => Math.abs((ball.x - frame.player.x) * direction.x + (ball.y - frame.player.y) * direction.y - reach) < 1e-6,
+  )
+}
+
 function createHelm(page: Page) {
   const held = new Set<string>()
   const set = async (code: string, down: boolean) => {
@@ -109,7 +118,7 @@ async function traceUntil(page: Page, found: (frame: TestSnapshot) => boolean, l
 }
 
 test.describe('TEST-04 combat: front and side shots, cooldown, damage, scoring without duplicates', () => {
-  test('Space fires one ball along the heading, Q and E fire three parallel balls to each side, holding Space fires at the cooldown rate', async ({
+  test('Space fires one ball along the heading, Q and E fire three parallel balls to each side, held keys fire at each cooldown rate', async ({
     pb,
     page,
   }) => {
@@ -169,6 +178,61 @@ test.describe('TEST-04 combat: front and side shots, cooldown, damage, scoring w
     expect(firedFrontBall(hold[0])).toBe(true)
     const released = await trace(page, 60)
     expect(released.some(firedFrontBall)).toBe(false)
+
+    const broadsideHoldSec = 3
+    const beforeVolleys = released[released.length - 1]
+    expect(beforeVolleys.player.cooldowns).toMatchObject({ left: 0, right: 0 })
+    await page.keyboard.down('KeyQ')
+    await page.keyboard.down('KeyE')
+    const volleys = await trace(page, broadsideHoldSec * 60)
+    await page.keyboard.up('KeyQ')
+    await page.keyboard.up('KeyE')
+    for (const group of ['left', 'right'] as const) {
+      const cooldown = player.cannons.find((cannon) => cannon.group === group)!.cooldown
+      const fired = volleys.filter(
+        (frame, index) => frame.player.cooldowns[group] > (index > 0 ? volleys[index - 1] : beforeVolleys).player.cooldowns[group],
+      )
+      expect(fired).toHaveLength(Math.floor(broadsideHoldSec / cooldown) + 1)
+      expect(volleys.indexOf(fired[0])).toBe(0)
+      for (const frame of fired) expect(freshBroadside(frame, group)).toHaveLength(3)
+      fired.slice(1).forEach((frame, index) => {
+        const gap = frame.time - fired[index].time
+        expect(gap).toBeGreaterThanOrEqual(cooldown - 1e-9)
+        expect(gap).toBeLessThan(cooldown + dt + 1e-9)
+      })
+    }
+  })
+
+  test('a ball fired at an island stops at its coast and never flies through it', async ({ pb, page }) => {
+    await pb.open('/')
+    const start = await pb.startMatch({ options: quiet })
+    const map = await pb.map()
+    const solidAt = (x: number, y: number) => {
+      const col = Math.floor(x / map.tile)
+      const row = Math.floor(y / map.tile)
+      return col >= 0 && row >= 0 && col < map.cols && row < map.rows && map.solid[row * map.cols + col] === 1
+    }
+    const from = start.player
+    const cells = map.solid.flatMap((solid, index) =>
+      solid === 1 ? [{ x: ((index % map.cols) + 0.5) * map.tile, y: (Math.floor(index / map.cols) + 0.5) * map.tile }] : [],
+    )
+    const gap = (cell: { x: number; y: number }) => Math.hypot(cell.x - from.x, cell.y - from.y)
+    const target = cells.reduce((best, cell) => (gap(cell) < gap(best) ? cell : best))
+    expect(gap(target), 'an island lies well inside the bow cannon range').toBeLessThan(front.muzzle + front.range / 2)
+    const aimed = await turnTo(page, start, Math.atan2(target.y - from.y, target.x - from.x))
+    expect(aimed.player).toMatchObject({ x: from.x, y: from.y })
+
+    await page.keyboard.down('Space')
+    const [shot] = await trace(page, 1)
+    await page.keyboard.up('Space')
+    expect(shot.projectiles).toHaveLength(1)
+    const flight = [shot, ...(await traceUntil(page, (frame) => frame.projectiles.length === 0, 2))]
+    const seen = flight.flatMap((frame) => frame.projectiles)
+    for (const ball of seen) expect(solidAt(ball.x, ball.y)).toBe(false)
+    const last = seen[seen.length - 1]
+    expect(Math.hypot(last.x - from.x, last.y - from.y)).toBeLessThan(gap(target))
+    expect(solidAt(last.x + last.dirX * last.speed * dt, last.y + last.dirY * last.speed * dt)).toBe(true)
+    expect(flight[flight.length - 1].score).toBe(0)
   })
 
   test('an enemy still sailing in through the fog cannot be hit', async ({ pb, page }) => {

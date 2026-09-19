@@ -1,8 +1,8 @@
 # Pirate Battle: Design Brief for Claude
 
-> **Source of truth:** the challenge README (written in Portuguese) at `game-developer-challenge/README.md`.
+> **Source of truth:** the challenge README (written in Portuguese) at `junglegaming/game-developer-challenge/README.md`.
 > This brief is a faithful English translation of it, reorganized for architecture work. It also adds an inventory of the provided assets (checked against the actual files) and lists the decisions the README leaves open.
-> If this brief and the README ever disagree, the README wins. Tell me about the conflict.
+> If this brief and the README ever disagree, the README wins.
 
 ---
 

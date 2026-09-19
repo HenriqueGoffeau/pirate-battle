@@ -21,7 +21,7 @@ arena of 24×14 tiles of 64 px (1536×896 logical px), always fully visible, so 
 | Axios | 1 | the only HTTP client ([http.ts](src/data/http.ts)) |
 | MSW | 2 | network-level mocks, 14 scenarios, a fake server database |
 | React Router | 8 | real URLs `/`, `/options`, `/log`, `/play`, `/result` |
-| Playwright | 1.63 | 38 E2E tests, visual baselines, performance and memory runs |
+| Playwright | 1.63 | 41 E2E tests, visual baselines, performance and memory runs |
 | Vitest | 5 | six small unit suites (§15) |
 | ESLint + eslint-plugin-boundaries | 10 / 7 | layer rules (§2) |
 
@@ -153,7 +153,7 @@ return clock.onFrame((time, lastOfBatch) => {
 | Ship ↔ arena edge | hull circles vs a 64 px band inside the rim | outward motion resisted at `edgePush·depth·max(0, heading·outward)`, up to 240 px/s; at the rim, a clamp removes only the outward component; no damage |
 | Ball ↔ island | DDA walk of the tile grid along the tick's segment | consumed at the first solid tile, impact burst (CB-01) |
 | Ball ↔ ship | segment vs each hull circle (r + 5); opposing faction only; arriving ships skipped | earliest hit wins; the ball is consumed and `{targetId, amount, source}` is queued (CB-03) |
-| Chaser ↔ player | any pair of hull circles | player −30; the Chaser dies with `killedBy: 'self'` and scores nothing (EN-01, MR-02) |
+| Chaser ↔ player | any pair of hull circles | player −30; the Chaser dies with `killedBy: 'self'` and scores nothing (EN-01, MR-02). A Chaser that the balls queued in the same tick already sink does not ram: the kill scores and the player takes no damage, so each tick has one outcome |
 | Shooter ↔ player, enemy ↔ enemy | deepest hull-circle overlap | pushed apart, half each, no damage; there is no friendly fire |
 
 - Damage applies exactly once (CB-04, CB-06):
@@ -326,7 +326,7 @@ stateDiagram-v2
   assetError --> loading: Retry
   loading --> ready: stage built
   ready --> running
-  ready --> paused: tab hidden or touch portrait
+  ready --> paused: tab hidden, no window focus or touch portrait
   running --> paused: P, Esc, button, blur, hidden, portrait
   paused --> resuming: Resume button, P, Esc
   resuming --> running
@@ -336,7 +336,7 @@ stateDiagram-v2
 ```
 
 - `GameSession` owns the state and changes it only through `enter(state)`. That one function attaches or detaches the gameplay listeners (keyboard and auto-pause, attached only in `running`/`resuming`), clears input and publishes `matchState`.
-- Only `running` steps the sim; every other state still draws. `ready` and `resuming` last one frame, then become `running`, or `paused` if play is blocked (`document.hidden`, or a touch device in portrait). Leaving the route from any state disposes the session.
+- Only `running` steps the sim; every other state still draws. `ready` and `resuming` last one frame, then become `running`, or `paused` if play is blocked: `document.hidden`, a touch device in portrait, or a window without focus (`!document.hasFocus()`). The focus check catches focus lost while the assets load, before the `blur` listener is attached. The map-editing view (`/play?dev=1`) skips it, because saving the map in the editor reloads the page while the editor has focus. Leaving the route from any state disposes the session.
 - Pause (MR-08; [lifecycle.ts](src/session/lifecycle.ts)) is triggered by P or Esc, the HUD pause button, window `blur`, `visibilitychange` to hidden, and the query `(orientation: portrait) and (pointer: coarse)` becoming true.
 - Resuming requires an action: the dialog's Resume button, P or Esc. There is no Pause → Options and no countdown. In portrait, the rotate overlay replaces the Pause dialog.
 - Ending (MR-03, MR-04): `endCheck` sets `world.ended` and the loop stops stepping at once. The frozen arena shows "Time's up!" or "Your ship was sunk!" for 1.2 s.
@@ -491,11 +491,11 @@ stateDiagram-v2
   - every test fails on any `console.error`, page error or React warning, unless that test allows the exact message (C-08).
 - Since the M7 aim retune, an idle player with seed 42 is sunk before a 60 s / 10 s match ends. The specs that need a time-up therefore use the exported `survivorSeed = 143`: the visual Result, the first TEST-06 test, TEST-08, TEST-11 and TEST-12. All other specs stay on seed 42.
 - Configuration ([playwright.config.ts](playwright.config.ts)):
-  - two projects (TEST-13): `desktop` (Chromium 1280×720, DPR 1) and `mobile` (Pixel 7, 915×412 landscape, touch), which runs TEST-01, TEST-09 and the visual spec;
+  - two projects (TEST-13): `desktop` (Chromium 1280×720, DPR 1) and `mobile` (Pixel 7, 915×412 landscape, touch), which runs the main flows: TEST-01, 06, 08, 09, 10, 11 and the visual spec. The simulation specs (TEST-02 to 05, 07 and 12) do not depend on the viewport and run on desktop only;
   - timezone America/Sao_Paulo, `reducedMotion: 'reduce'`, no retries;
   - list and HTML reporters, with trace, video and screenshot kept on failure (TEST-18).
 - Visual baselines (TEST-14) live in `e2e/__screenshots__/visual.spec.ts/<name>-<project>-<platform>.png`, compared with `maxDiffPixelRatio 0.005`. There are 3 screens × 2 projects, for both Windows and Linux.
-- The suite has 38 tests and 48 runs. It is green locally on Windows and in the Linux Playwright image (`npm run test:e2e:docker`, [e2e-docker.ts](scripts/e2e-docker.ts); add `-- --update-snapshots` to regenerate the Linux baselines).
+- The suite has 41 tests and 63 runs. It is green locally on Windows and in the Linux Playwright image (`npm run test:e2e:docker`, [e2e-docker.ts](scripts/e2e-docker.ts); add `-- --update-snapshots` to regenerate the Linux baselines).
 - The committed HTML report is [docs/reports/playwright/](docs/reports/playwright/index.html).
 - `PB_BASE_URL=https://… npm run test:e2e` runs the suite against a deployed URL without starting a local server.
 - [.github/workflows/e2e.yml](.github/workflows/e2e.yml) runs lint, typecheck, Vitest and Playwright in the same image.
@@ -505,13 +505,13 @@ stateDiagram-v2
 | TEST-01 | [test-01-options](e2e/specs/test-01-options.spec.ts) | steppers stop at the limits; a typed 75 shows "Use steps of 10 seconds."; Save survives a reload and the next match uses `s90-i5`; corrupt storage falls back |
 | TEST-02 | [test-02-assets](e2e/specs/test-02-assets.spec.ts) | progress while `ships.json` is held; an abort shows the error panel; Retry runs the match; a second match makes zero asset requests |
 | TEST-03 | [test-03-movement](e2e/specs/test-03-movement.spec.ts) | speed follows accel/drag; turning ramps; the ship slides along the rim and an island without overlapping them |
-| TEST-04 | [test-04-combat](e2e/specs/test-04-combat.spec.ts) | one bow ball and three broadside balls per side; the cooldown count; arriving ships are immune; a Chaser sunk scores exactly 1 |
+| TEST-04 | [test-04-combat](e2e/specs/test-04-combat.spec.ts) | one bow ball and three broadside balls per side; held Space, Q and E each fire at their own cooldown; a ball aimed at an island stops at its coast; arriving ships are immune; a Chaser sunk scores exactly 1 |
 | TEST-05 | [test-05-enemies](e2e/specs/test-05-enemies.spec.ts) | one spawn per interval; the first two kinds differ; a ram deals `impactDamage` and scores nothing; the Shooter keeps its range and fires |
 | TEST-06 | [test-06-match-end](e2e/specs/test-06-match-end.spec.ts) | time-up freezes the sim; an idle player dies with 1 s spawns; Play Again resets health, score, timer and entities |
-| TEST-07 | [test-07-pause](e2e/specs/test-07-pause.spec.ts) | P, Esc, Resume, blur, a hidden tab and the HUD button all pause; nothing advances for 5 s; held keys stay inert |
+| TEST-07 | [test-07-pause](e2e/specs/test-07-pause.spec.ts) | P, Esc, Resume, blur, a hidden tab and the HUD button all pause; nothing advances for 5 s; held keys stay inert; a battle that loads without window focus starts paused and stays paused until focus and Resume |
 | TEST-08 | [test-08-result](e2e/specs/test-08-result.spec.ts) | the Result matches the snapshot; Saving → Saved with one PUT 201; it survives a reload and a fresh visit; Back never returns to a finished match |
 | TEST-09 | [test-09-navigation](e2e/specs/test-09-navigation.spec.ts) | abandoning records nothing; 10 × menu ↔ play keeps ≤ 1 canvas and baseline listeners (CDP); a POP onto `/play` lands on the menu; two-finger touch |
-| TEST-10 | [test-10-log-tabs](e2e/specs/test-10-log-tabs.spec.ts) | paging checked cell by cell (★, YOU, both tie-breaks); a tab shown again refetches; empty; `rankingFails` (3 tries, then Retry); `slow` |
+| TEST-10 | [test-10-log-tabs](e2e/specs/test-10-log-tabs.spec.ts) | paging checked cell by cell (★, YOU, both tie-breaks); a tab shown again refetches; empty; `rankingFails` and `historyFails` (3 tries, then Retry, while the other tab loads); `slow` |
 | TEST-11 | [test-11-save](e2e/specs/test-11-save.spec.ts) | one PUT 201 and both tabs refresh; `downThenRecover`: pending status and badge survive a reload, PUTs 503, 503, 201, one record |
 | TEST-12 | [test-12-resend](e2e/specs/test-12-resend.spec.ts) | `timeoutAfterSave`: 8 s timeout, Retry gets 200, one row; `outOfOrder`: a late page-1 response never replaces page 2 |
 | TEST-14 | [visual](e2e/specs/visual.spec.ts) | the menu; the arena after 5 s (seed 42, no input); the Result after a time-up (seed 143) |

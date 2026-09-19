@@ -39,7 +39,7 @@ export default defineConfig({
     },
     {
       name: 'mobile',
-      testMatch: /(test-01|test-09|visual)[^/\\]*\.spec\.ts$/,
+      testMatch: /(test-01|test-06|test-08|test-09|test-10|test-11|visual)[^/\\]*\.spec\.ts$/,
       use: {
         ...devices['Pixel 7'],
         viewport: { width: 915, height: 412 },

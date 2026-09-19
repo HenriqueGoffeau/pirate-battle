@@ -226,7 +226,7 @@ export class GameSession {
   }
 
   private frame(world: World, arena: ArenaStage, app: Application, draw: boolean): void {
-    if (this.state === 'ready' || this.state === 'resuming') this.enter(isPlayBlocked() ? 'paused' : 'running')
+    if (this.state === 'ready' || this.state === 'resuming') this.enter(isPlayBlocked(!this.debugOverlay) ? 'paused' : 'running')
     if (draw) {
       arena.draw(world)
       app.render()

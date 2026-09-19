@@ -153,6 +153,34 @@ test.describe('TEST-10 log tabs: loading, paging, empty and error states', () =>
     expect(await countGets(pb, rankingPage1)).toBe(1)
   })
 
+  test('historyFails: Match History shows the skeleton, then its error with Retry, while the Ranking still loads', async ({
+    pb,
+    page,
+  }) => {
+    pb.allowConsole(/Failed to load resource: the server responded with a status of 503/)
+    const panel = page.getByRole('tabpanel')
+
+    await pb.open('/log?tab=ranking', { scenario: 'historyFails' })
+    await expect.poll(() => rankAndName(page)).toEqual(fixtureRanks1)
+    await expect(panel.getByRole('alert')).toHaveCount(0)
+
+    await page.getByRole('tab', { name: 'Match History' }).click()
+    await expect(panel.locator('tbody tr[aria-hidden="true"]')).toHaveCount(5)
+    await expect(panel.getByRole('status')).toHaveText('Loading…')
+    const alert = panel.getByRole('alert')
+    await expect(alert).toContainText('Couldn’t load your match history. The service is unavailable. Try again shortly.')
+    await expect(alert.getByRole('button', { name: 'Retry', exact: true })).toBeVisible()
+    await expect(panel.getByRole('table')).toHaveCount(0)
+    const historyRequests = (await pb.requestLog()).filter((entry) => /^\/api\/players\/[^/]+\/matches\?/.test(entry.path))
+    expect(historyRequests.map((entry) => entry.status)).toEqual([503, 503, 503])
+
+    await pb.setScenario('success')
+    await alert.getByRole('button', { name: 'Retry', exact: true }).click()
+    await expect(panel.getByText('No battles logged yet.', { exact: true })).toBeVisible()
+    await expect(panel.getByRole('alert')).toHaveCount(0)
+    expect(await countGets(pb, historyPage1)).toBe(1)
+  })
+
   test('slow: the skeleton and Loading… come first, and paging keeps the previous page dimmed with disabled arrows until the next one arrives', async ({
     pb,
     page,

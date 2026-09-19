@@ -58,6 +58,9 @@ function pushApart(first: Ship, second: Ship, contact: { nx: number; ny: number;
   second.y -= contact.ny * half
 }
 
+const incomingDamage = (world: World, ship: Ship) =>
+  world.hits.reduce((total, hit) => (hit.targetId === ship.id ? total + hit.amount : total), 0)
+
 function shipContacts(world: World): void {
   const player = playerOf(world)
   const enemies = world.ships.filter((ship) => ship.faction === 'enemy' && ship.alive && !ship.arriving)
@@ -66,6 +69,7 @@ function shipContacts(world: World): void {
       const contact = deepestContact(player, enemy)
       if (!contact) continue
       if (enemy.kind === 'chaser') {
+        if (incomingDamage(world, enemy) >= enemy.health) continue
         world.hits.push({ targetId: player.id, amount: world.config.enemies.chaser.impactDamage, source: 'enemy' })
         world.hits.push({ targetId: enemy.id, amount: Infinity, source: 'self' })
       } else {

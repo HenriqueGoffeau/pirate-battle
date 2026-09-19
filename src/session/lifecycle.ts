@@ -1,7 +1,7 @@
 export const portraitQuery = '(orientation: portrait) and (pointer: coarse)'
 
-export function isPlayBlocked(): boolean {
-  return document.hidden || window.matchMedia(portraitQuery).matches
+export function isPlayBlocked(requireFocus: boolean): boolean {
+  return document.hidden || (requireFocus && !document.hasFocus()) || window.matchMedia(portraitQuery).matches
 }
 
 export function attachAutoPause(onPause: () => void): () => void {

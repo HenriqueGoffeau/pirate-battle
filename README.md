@@ -7,7 +7,7 @@ combat, collision and enemy AI are hand-written rules in a pure TypeScript simul
 through a REST API mocked with MSW at the network layer, called with Axios and cached with TanStack Query. Playwright
 covers every graded flow end to end, including visual regression.
 
-**Live URL:** [<LIVE_URL>](https://pirate-battle.inrikg-dev.duckdns.org/)
+**Live URL:** [pirate-battle.inrikg-dev.duckdns.org](https://pirate-battle.inrikg-dev.duckdns.org/)
 
 **Hosting choice.** The game is deployed as a self-hosted Docker image (nginx serving the static build) behind the
 author's Caddy reverse proxy on a dedicated subdomain, over HTTPS with a trusted certificate. This replaces Vercel,
@@ -49,7 +49,7 @@ The plan was 24 committed hours plus a 4-hour buffer, split into milestones M0�
 | Shooter side cannons (stretch #1) | Not built. Shooters carry one bow cannon. Cannons are a per-kind array in `GameConfig`, so side cannons would be config entries, but they were never added or tuned. |
 | Resume countdown (stretch #5) | Not built. Resume (button, P or Esc) is immediate. Held keys still have to be pressed again (MR-10). |
 | Sinking debris and crew (stretch #6) | Not built. A destroyed ship explodes and leaves a fading wreck sprite. |
-| Mobile Playwright project | Limited to TEST-01, TEST-09 and the visual spec. The stretch goal also covered TEST-08 and TEST-10. |
+| Mobile Playwright project | Done after M7: it runs the main flows, TEST-01, 06, 08, 09, 10, 11 and the visual spec. The simulation specs (TEST-02 to 05, 07 and 12) do not depend on the viewport and run on desktop only. |
 | Not planned | Audio (the pack's WAV files are unused), a ranking configuration selector (the `GET /api/ranking/configs` endpoint exists but has no UI), balance editing as form fields (the dev panel edits JSON), render interpolation. |
 
 ## Setup and scripts
@@ -141,8 +141,9 @@ pirate-battle.example.com {
 
 To check a deploy:
 
-- `curl -I <LIVE_URL>/mockServiceWorker.js` should answer 200 with a JavaScript content type and `cache-control: no-cache`.
-- `<LIVE_URL>/result` should load when opened directly and again after a reload.
+- `curl -I https://pirate-battle.inrikg-dev.duckdns.org/mockServiceWorker.js` should answer 200 with a JavaScript content
+  type and `cache-control: no-cache`.
+- https://pirate-battle.inrikg-dev.duckdns.org/result should load when opened directly and again after a reload.
 - In the DevTools console, `document.body.dataset.mswReady` should be `"true"`.
 - The footer SHA should equal `git rev-parse --short HEAD`.
 
@@ -160,11 +161,11 @@ The app has no `.env` file and no runtime configuration. Only these variables ar
 To run the suite against the live site:
 
 ```powershell
-$env:PB_BASE_URL = '<LIVE_URL>'; npm run test:e2e; Remove-Item Env:PB_BASE_URL
+$env:PB_BASE_URL = 'https://pirate-battle.inrikg-dev.duckdns.org'; npm run test:e2e; Remove-Item Env:PB_BASE_URL
 ```
 
 ```bash
-PB_BASE_URL=<LIVE_URL> npm run test:e2e
+PB_BASE_URL=https://pirate-battle.inrikg-dev.duckdns.org npm run test:e2e
 ```
 
 ## Controls
@@ -193,13 +194,15 @@ below it. Each button tracks its own finger, so several can be held at once. A s
 cooldown. The HUD pause button sits at the top.
 
 **Pause.** Press P or Esc, or the HUD pause button. The game also pauses by itself when the window loses focus, the
-tab is hidden, or a touch device turns to portrait (a rotate overlay replaces the dialog; menus work in portrait).
+tab is hidden, or a touch device turns to portrait (a rotate overlay replaces the dialog; menus work in portrait). A
+battle that finishes loading while the window has no focus starts paused.
 While paused, time, cooldowns and spawns are frozen. Resume with the Resume button, P or Esc. A key or finger held
 through a pause does nothing until it is pressed again. The pause dialog offers Resume and Main Menu. Leaving
 abandons the match, which is never recorded (CFG-06).
 
 **Rules in brief.** Health is 100, with no regeneration and no pickups. A Chaser (red sails) is slower than you but
-rams for 30 and explodes; that scores nothing. A Shooter (blue sails) keeps its distance and fires its bow cannon. The
+rams for 30 and explodes; that scores nothing. A Chaser your cannons sink in the same instant it touches you counts as
+a kill instead: one point and no ram. A Shooter (blue sails) keeps its distance and fires its bow cannon. The
 first two spawns are one of each kind, and at most 6 enemies are alive at once. The match ends when time runs out
 (a win) or your health reaches zero.
 
@@ -329,10 +332,10 @@ To start from scratch, delete the `pb:v1:*` keys in DevTools under Application �
 | `src/assets/parseTiledMap.test.ts` | Spawn entries: on the edge, facing inward, with a clear water lane to the player start |
 | `src/session/determinism.test.ts` | Same seed + scripted input gives an identical world under 1000 ms and 7 ms clock advances, and a different one for another seed |
 
-**Playwright** (`npm run test:e2e`) has 38 tests and 48 runs in two Chromium projects:
+**Playwright** (`npm run test:e2e`) has 41 tests and 63 runs in two Chromium projects:
 
 - `desktop`: 1280×720, DPR 1.
-- `mobile`: Pixel 7, 915×412 landscape, touch. Runs TEST-01, TEST-09 and the visual spec.
+- `mobile`: Pixel 7, 915×412 landscape, touch. Runs the main flows: TEST-01, 06, 08, 09, 10, 11 and the visual spec.
 
 Playwright builds the app and serves `vite preview` on port 4173 itself, so the suite always runs against the
 optimized build. Locally it reuses a preview that is already running. Each test starts from a fresh browser context
@@ -344,13 +347,13 @@ with `?test=1&scenario=…&reset=1` (TEST-17). A fixture fails any test that log
 | `test-01-options` | Steppers stop at the limits, 75 is rejected with an accessible error, saved options survive a reload and reach the next match's `configKey`, corrupt storage falls back to 120/3 |
 | `test-02-assets` | Loading progress with no canvas, a failed atlas shows an error with Retry, Retry recovers, a second match makes no asset requests |
 | `test-03-movement` | Acceleration, coasting, rudder inertia, sliding along the arena rim and island coasts without overlap |
-| `test-04-combat` | Bow and broadside shots on real keys, cooldown count, damage, exactly one point per sunk ship |
+| `test-04-combat` | Bow and broadside shots on real keys, each gun firing at its own cooldown while held, a ball stopped at an island's coast, damage, exactly one point per sunk ship |
 | `test-05-enemies` | Spawn count and timing, the first two kinds differ, Chaser ram damage with no score, Shooter range and fire |
 | `test-06-match-end` | Time up and defeat, the simulation stops, Play Again is a clean new match |
-| `test-07-pause` | P, Esc, the HUD button, blur and a hidden tab freeze time, cooldowns and spawns; held keys stay inert after resume |
+| `test-07-pause` | P, Esc, the HUD button, blur and a hidden tab freeze time, cooldowns and spawns; held keys stay inert after resume; a battle that loads without window focus starts paused |
 | `test-08-result` | Result matches the match, Saving → Saved with one PUT, survives a reload and a fresh visit, Back never returns to a finished match |
 | `test-09-navigation` | Abandoning records nothing, 10 menu ↔ play cycles keep ≤ 1 canvas and no leaked listeners, reloads land on the menu, multi-touch controls |
-| `test-10-log-tabs` | Ranking and History paging, both tie-breaks, empty, error with Retry, loading and placeholder states |
+| `test-10-log-tabs` | Ranking and History paging, both tie-breaks, empty, an error with Retry on each tab while the other still loads, loading and placeholder states |
 | `test-11-save` | One PUT per match, both tabs refresh, a pending save and its badge survive a reload and recover |
 | `test-12-resend` | A retry after a timeout returns the stored record (no duplicate), and late responses never overwrite newer pages |
 | `visual` | Menu, arena after 5 s (seeded, no input) and Result, on desktop and mobile |

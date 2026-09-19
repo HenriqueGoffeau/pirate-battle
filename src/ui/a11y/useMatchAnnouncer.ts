@@ -47,7 +47,7 @@ export function useMatchAnnouncer(hud: HudSnapshot): RefObject<HTMLDivElement | 
       const element = region.current
       if (!element || queue.current.length === 0) return
       const text = queue.current.join(' ')
-      element.textContent = element.textContent === text ? `${text}00a0` : text
+      element.textContent = element.textContent === text ? `${text}\xa0` : text
       queue.current = []
       lastAt.current = performance.now()
     }

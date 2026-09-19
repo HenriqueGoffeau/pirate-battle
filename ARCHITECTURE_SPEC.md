@@ -331,7 +331,7 @@ DOM legend explains the colours. `npm run convert-assets` rebuilds the map once 
 | Ship ↔ arena edge | each hull circle's outer edge vs the arena bounds: soft band `edgeBand` px wide inside the edge, hard limit at the edge | in the band: move inward along the edge normal by `edgePush · depth/edgeBand · max(0, heading · outwardNormal)` px/s (only ships heading out are pushed); at the limit: clamp, removing only the outward component (slide). No damage |
 | Shot ↔ island | DDA walk of the tile grid along this tick's segment | consume at first solid tile, splash effect |
 | Shot ↔ ship | swept segment vs each hull circle (r + 5), opposing faction only | earliest hit wins; consume; push `{targetId, amount, sourceId}` to hits |
-| Chaser ↔ player | any hull circle pair | player −impactDamage; chaser dead with `killedBy: 'self'` (no score), explosion |
+| Chaser ↔ player | any hull circle pair | player −impactDamage; chaser dead with `killedBy: 'self'` (no score), explosion. As built (after M7): skipped when the balls queued this tick already sink the chaser, so the kill scores and there is no ram |
 | Shooter ↔ player | hull circles | push both apart half-way, no damage |
 | Enemy ↔ enemy | hull circles (arriving ships skipped) | push both apart half-way, no damage; separation steering keeps them fanned out before contact. Measured headless (15 seeds × idle and moving player, 120 s): deeply overlapping enemy pairs 16 % of enemy-ticks before, 0 % after |
 | Anything ↔ arriving enemy | skipped | arriving ships can't be hit, can't ram, don't separate (§8 Arrival) |
@@ -432,7 +432,8 @@ States: `loading → assetError ⇄ (Retry) → ready → running ⇄ paused →
 - Only `running` steps the sim; others repaint. `GameSession` owns the state; every change goes through one `enter(state)` that
   attaches the gameplay listeners (keyboard + auto-pause) only for `running`/`resuming`, clears input, and publishes `matchState`.
 - `ready` lasts one frame (stage built, first frame drawn, no step); `resuming` likewise. Both then enter `running`, or `paused`
-  if play is blocked (`document.hidden` or touch portrait), so resuming in portrait stays paused.
+  if play is blocked (`document.hidden` or touch portrait), so resuming in portrait stays paused. As built (after M7): a window
+  without focus (`!document.hasFocus()`) also blocks, except in the `?dev=1` map view, so focus lost during loading starts paused.
 - Pause triggers (`session/lifecycle.ts`): P/Esc keydown (non-repeat), the HUD pause button, window `blur`, `visibilitychange` to
   hidden, and the portrait query turning true. Resume = the dialog's Resume button, P, or Esc (the native `<dialog>` `cancel`).
   The dialog swallows auto-repeated Esc/P and stops P from reaching the window listeners that `resuming` attaches during the same
@@ -728,7 +729,7 @@ As built (M6):
   `console.error`, page error or React warning fails the test unless that test allows the exact pattern (failure scenarios allow
   "Failed to load resource … 503", the asset spec allows `net::ERR_FAILED`).
 - **Config**: projects `desktop` (Chromium 1280×720, DPR 1) and `mobile` (Pixel 7 user agent, 915×412 landscape, DPR 1, touch;
-  runs test-01, test-09 and visual); timezone America/Sao_Paulo so dates are identical on every host; `reducedMotion: 'reduce'`;
+  runs test-01, 06, 08, 09, 10, 11 and visual since the post-M7 review); timezone America/Sao_Paulo so dates are identical on every host; `reducedMotion: 'reduce'`;
   no retries; 4 workers locally, 2 in CI; list + HTML reporters; trace, video and screenshot kept on failure; the web server is
   `npm run build && npm run preview` (reused if already running locally). Baselines live in
   `e2e/__screenshots__/<spec>/<name>-<project>-<platform>.png` (`maxDiffPixelRatio 0.005`, animations disabled), so the Windows
@@ -766,7 +767,8 @@ which snapshotted every tick with `step(1)` (one drawn frame per tick, ≈ 600 p
 snapshots after every tick of a single `advance` and draws once; the CI timeout is 180 s (60 s locally). Checked in the Linux
 image capped at 1 CPU: the slowest spec takes 108 s.
 
-38 tests; 48 runs across the two projects (the touch test is skipped on desktop). TEST-13 = the two projects, TEST-15 = seed +
+41 tests; 63 runs across the two projects (the touch test is skipped on desktop). The post-M7 review added a broadside
+hold-rate check and a ball-vs-island test to TEST-04, a start-without-focus test to TEST-07 and a `historyFails` test to TEST-10. TEST-13 = the two projects, TEST-15 = seed +
 manual clock, TEST-16 = the API above, TEST-17 = a fresh context per test plus `reset=1`, TEST-18 = HTML report + traces.
 Notes from the agents for ARCHITECTURE.md §19 (not bugs): sliding along an island at a steep angle is slow because each step keeps
 only the tangential share of the speed; a Shooter dips about 40 px inside minRange while it turns (rudder inertia); the ship settles
